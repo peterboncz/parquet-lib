@@ -11,7 +11,7 @@ public:
 	Decoder() {}
 	virtual ~Decoder() {};
 	virtual uint8_t* nextValue() = 0;
-	virtual uint8_t getValueSize() = 0;
+	virtual uint32_t getValueSize() = 0;
 };
 
 

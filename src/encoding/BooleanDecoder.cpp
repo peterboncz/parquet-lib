@@ -4,7 +4,7 @@ namespace parquetbase {
 namespace encoding {
 
 
-BooleanDecoder::BooleanDecoder(uint8_t* buffer, uint32_t size)
+BooleanDecoder::BooleanDecoder(uint8_t* buffer, uint64_t size)
 		: buffer(buffer), bufferend(buffer+size-1) {
 }
 

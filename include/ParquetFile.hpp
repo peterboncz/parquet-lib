@@ -22,7 +22,7 @@ protected:
 	const std::string& filename;
 	FILE* file_handle;
 
-	uint32_t file_size;
+	uint64_t file_size;
 	schema::Element* schema;
 	uint8_t level_maxvalue = 0;
 

@@ -4,8 +4,8 @@ namespace parquetbase {
 namespace encoding {
 
 
-PlainDecoder::PlainDecoder(uint8_t* buffer, uint32_t size, uint8_t value_size)
-		: buffer(buffer), value_size(value_size), bufferend(buffer+size) {
+PlainDecoder::PlainDecoder(uint8_t* buffer, uint64_t size, uint32_t value_size)
+		: buffer(buffer), bufferend(buffer+size), value_size(value_size) {
 }
 
 

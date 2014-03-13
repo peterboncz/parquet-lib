@@ -8,7 +8,7 @@ namespace util {
 std::vector<std::string> split(std::string work, char delim, int rep) {
     std::vector<std::string> flds;
     std::string buf = "";
-    int i = 0;
+    uint i = 0;
     while (i < work.length()) {
         if (work[i] != delim)
             buf += work[i];

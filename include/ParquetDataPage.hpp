@@ -11,7 +11,7 @@ namespace parquetbase {
 class ParquetDataPage {
 protected:
 	uint8_t* mem;
-	uint32_t mem_size;
+	uint64_t mem_size;
 	uint32_t value_size; // in bytes // TODO: BOOLEAN and BYTE_ARRAY need special treatment
 	uint32_t num_values;
 	parquet::thriftschema::DataPageHeader metadata;
@@ -23,7 +23,7 @@ protected:
 	ParquetDictionaryPage* dict;
 	void initDecoder();
 public:
-	ParquetDataPage(uint8_t* mem, uint32_t mem_size,
+	ParquetDataPage(uint8_t* mem, uint64_t mem_size,
 		parquet::thriftschema::DataPageHeader metadata, schema::SimpleElement* schema, ParquetDictionaryPage* dict);
 
 	// returns pointer to memory with the next value, size of memroy depends von value_size

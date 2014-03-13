@@ -14,7 +14,7 @@ RleDecoder::RleDecoder() {
 }
 
 
-RleDecoder::RleDecoder(uint8_t* buffer, uint32_t& maxsize, uint8_t bitwidth) {
+RleDecoder::RleDecoder(uint8_t* buffer, uint64_t& maxsize, uint8_t bitwidth) {
 	assert(bitwidth <= 8); // TODO: bitdwidth > 8
 	uint32_t len = reinterpret_cast<uint32_t*>(buffer)[0];
 	this->buffer = buffer + 4;
@@ -48,7 +48,7 @@ bool RleDecoder::get(uint8_t& val) {
 		val = *buffer;
 		val = val >> bit_offset;
 		uint8_t left = bitwidth - (8-bit_offset);
-		if ((uint8_t)8-bit_offset >= bitwidth) left = 0;
+		if (8-bit_offset >= bitwidth) left = 0;
 		uint8_t done = bitwidth - left;
 		val = val & ((1 << done)-1);
 		if (8-bit_offset < bitwidth) {

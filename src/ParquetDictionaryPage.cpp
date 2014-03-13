@@ -4,8 +4,8 @@
 
 namespace parquetbase {
 
-ParquetDictionaryPage::ParquetDictionaryPage(uint8_t* mem, uint32_t mem_size, uint32_t num_values, schema::SimpleElement* schema)
-		: mem(mem), mem_size(mem_size), num_values(num_values), schema(schema), dataindex(num_values) {
+ParquetDictionaryPage::ParquetDictionaryPage(uint8_t* mem, uint64_t mem_size, uint32_t num_values, schema::SimpleElement* schema)
+		: mem(mem), num_values(num_values), schema(schema), dataindex(num_values) {
 	if (schema->type == schema::ColumnType::BYTE_ARRAY) {
 		fixedvaluesize = false;
 		encoding::PlainByteArrayDecoder d(mem, mem_size);

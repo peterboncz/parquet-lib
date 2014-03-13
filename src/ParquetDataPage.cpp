@@ -21,13 +21,13 @@ void ParquetDataPage::initDecoder() {
 }
 
 
-ParquetDataPage::ParquetDataPage(uint8_t* mem, uint32_t mem_size,
+ParquetDataPage::ParquetDataPage(uint8_t* mem, uint64_t mem_size,
 		parquet::thriftschema::DataPageHeader metadata, schema::SimpleElement* schema, ParquetDictionaryPage* dict)
 		: mem(mem), mem_size(mem_size), metadata(metadata), schema(schema), dict(dict) {
 	r_level = schema->r_level;
 	d_level = schema->d_level;
 	value_size = schema->columnSize();
-	uint32_t size = mem_size;
+	uint64_t size = mem_size;
 	if (schema->parent->parent == nullptr) { // column is not nested -> r_levels are omitted
 		omit_r_levels = true;
 	} else {
