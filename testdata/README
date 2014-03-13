@@ -1,0 +1,3 @@
+Parquet files used for testing the reader:
+- customer.impala.parquet, nation.impala.parquet: Testfiles from https://github.com/Parquet/parquet-compatibility/tree/master/parquet-testdata/impala/1.1.1-NONE, based on the TPC-H
+- nested-null.parquet: Simple self-created (with Apache Hive) nested schema with null values.
