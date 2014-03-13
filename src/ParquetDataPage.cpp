@@ -9,10 +9,14 @@ namespace parquetbase {
 void ParquetDataPage::initDecoder() {
 	if (metadata.encoding == parquet::thriftschema::Encoding::PLAIN_DICTIONARY) {
 		data_decoder = new encoding::PlainDictionaryDecoder(mem, mem_size, dict);
-	} else if (schema->type == schema::ColumnType::BYTE_ARRAY) {
-		data_decoder = new encoding::PlainByteArrayDecoder(mem, mem_size);
-	} else {
-		data_decoder = new encoding::PlainDecoder(mem, mem_size, value_size);
+	} else if (metadata.encoding == parquet::thriftschema::Encoding::PLAIN) {
+		if (schema->type == schema::ColumnType::BYTE_ARRAY) {
+			data_decoder = new encoding::PlainByteArrayDecoder(mem, mem_size);
+		} else if (schema->type == schema::ColumnType::BOOLEAN) {
+			data_decoder = new encoding::BooleanDecoder(mem, mem_size);
+		} else {
+			data_decoder = new encoding::PlainDecoder(mem, mem_size, value_size);
+		}
 	}
 }
 
