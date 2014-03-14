@@ -1,6 +1,6 @@
 CXX ?= g++
 CPPFLAGS = -Ilibs/gtest/include/ -Iinclude/ -Igen/
-LDFLAGS = -pthread -lpthread -lthrift
+LDFLAGS = -pthread -lpthread -lthrift -lz
 OPT ?= -g3 -O0 -std=c++11 -march=native #-Wall
 
 src_files := $(patsubst src/%,bin/src/%, $(patsubst %.cpp,%.o,$(wildcard src/*.cpp src/*/*.cpp src/*/*/*.cpp)))
