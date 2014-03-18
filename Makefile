@@ -1,6 +1,6 @@
 CXX ?= g++
 CPPFLAGS = -Ilibs/gtest/include/ -Iinclude/ -Igen/
-LDFLAGS = -pthread -lpthread -lthrift -lz
+LDFLAGS = -pthread -lpthread -lthrift -lz -lsnappy
 OPT ?= -g3 -O0 -std=c++11 -march=native #-Wall
 
 src_files := $(patsubst src/%,bin/src/%, $(patsubst %.cpp,%.o,$(wildcard src/*.cpp src/*/*.cpp src/*/*/*.cpp)))
@@ -20,9 +20,12 @@ bin/parquet_types.o: gen/parquet_types.cpp | gen
 bin/parquet_constants.o: gen/parquet_constants.cpp | gen
 	$(CXX) $(OPT) -c -o $@ $< $(CPPFLAGS)
 
+bin/libparquet.a: $(src_files) bin/parquet_constants.o bin/parquet_types.o
+	ar rcs $@ $^
 
-bin/tester: $(test_files) $(src_files) bin/parquet_constants.o bin/parquet_types.o
-	$(CXX) $(OPT) -o bin/tester $(test_files) $(src_files) bin/parquet_constants.o bin/parquet_types.o libs/gtest/libgtest.a $(CPPFLAGS) $(LDFLAGS) 
+bin/tester: $(test_files) bin/libparquet.a
+	$(CXX) $(OPT) -o bin/tester $(test_files) bin/libparquet.a libs/gtest/libgtest.a $(CPPFLAGS) $(LDFLAGS)
+
 
 
 $(bin_dir)%.o: %.cpp | gen

@@ -1,0 +1,8 @@
+Prerequisites
+=============
+* thrift with cpp-Bindings (Version >= 0.7)
+* zlib
+* snappy
+
+
+
