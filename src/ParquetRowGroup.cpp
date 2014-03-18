@@ -1,6 +1,7 @@
 #include "ParquetRowGroup.hpp"
 
 #include "util/StringUtil.hpp"
+#include "Exception.hpp"
 
 namespace parquetbase {
 
@@ -29,7 +30,7 @@ ParquetColumn ParquetRowGroup::column(const std::string& full_name) {
 			return std::move(col);
 		}
 	}
-	throw "column not found";
+	throw Exception("column not found: "+full_name);
 }
 
 

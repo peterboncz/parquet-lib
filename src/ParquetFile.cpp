@@ -3,21 +3,22 @@
 #include <iostream>
 #include "util/ThriftUtil.hpp"
 #include "util/BitUtil.hpp"
+#include "Exception.hpp"
+
 
 namespace parquetbase {
 
 
-
 ParquetFile::ParquetFile(const std::string& filename) : filename(filename) {
 	file_handle = fopen(filename.c_str(), "r");
-	if (file_handle == nullptr) throw "invalid filename";
+	if (file_handle == nullptr) throw Exception("invalid filename: "+filename);
 	struct stat st;
-	if (stat(filename.c_str(), &st) == -1) throw "invalid filename";
+	if (stat(filename.c_str(), &st) == -1) throw Exception("invalid filename: "+filename);
 	file_size = st.st_size;
 	file_mem = reinterpret_cast<uint8_t*>(mmap(0, file_size, PROT_READ, MAP_SHARED, fileno(file_handle), 0));
 	// check magic number
-	if (memcmp(file_mem, "PAR1", 4) != 0) throw "not a parquet file";
-	if (memcmp(file_mem+file_size-4, "PAR1", 4) != 0) throw "not a parquet file";
+	if (memcmp(file_mem, "PAR1", 4) != 0) throw Exception("not a parquet file: "+filename);
+	if (memcmp(file_mem+file_size-4, "PAR1", 4) != 0) throw Exception("not a parquet file: "+filename);
 	uint64_t footersize = *reinterpret_cast<uint32_t*>(file_mem+file_size-8);
     uint8_t* buf = file_mem + (file_size-8-footersize);
     filemetadata = util::thrift_deserialize<parquet::thriftschema::FileMetaData>(buf, footersize);
