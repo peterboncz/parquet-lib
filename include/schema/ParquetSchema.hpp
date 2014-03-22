@@ -10,6 +10,7 @@ namespace schema {
 
 enum class RepetitionType : std::uint8_t { REQUIRED = 0, OPTIONAL = 1, REPEATED = 2 };
 
+
 inline RepetitionType map(parquet::thriftschema::FieldRepetitionType::type type) {
 	switch (type) {
 		case parquet::thriftschema::FieldRepetitionType::REQUIRED: return RepetitionType::REQUIRED;
@@ -19,10 +20,20 @@ inline RepetitionType map(parquet::thriftschema::FieldRepetitionType::type type)
 }
 
 
+inline parquet::thriftschema::FieldRepetitionType::type unmap(RepetitionType type) {
+	switch(type) {
+	case RepetitionType::REQUIRED: return parquet::thriftschema::FieldRepetitionType::REQUIRED;
+	case RepetitionType::OPTIONAL: return parquet::thriftschema::FieldRepetitionType::OPTIONAL;
+	case RepetitionType::REPEATED: return parquet::thriftschema::FieldRepetitionType::REPEATED;
+	}
+}
+
+
 enum class ColumnType : std::uint8_t {
   BOOLEAN = 0, INT32 = 1, INT64 = 2, INT96 = 3, FLOAT = 4,
   DOUBLE = 5, BYTE_ARRAY = 6, FIXED_LEN_BYTE_ARRAY = 7
 };
+
 
 inline ColumnType map(parquet::thriftschema::Type::type type) {
 	switch (type) {
@@ -38,16 +49,31 @@ inline ColumnType map(parquet::thriftschema::Type::type type) {
 }
 
 
+inline parquet::thriftschema::Type::type unmap(ColumnType type) {
+	switch(type) {
+	case ColumnType::BOOLEAN: return parquet::thriftschema::Type::BOOLEAN;
+	case ColumnType::INT32: return parquet::thriftschema::Type::INT32;
+	case ColumnType::INT64: return parquet::thriftschema::Type::INT64;
+	case ColumnType::INT96: return parquet::thriftschema::Type::INT96;
+	case ColumnType::FLOAT: return parquet::thriftschema::Type::FLOAT;
+	case ColumnType::DOUBLE: return parquet::thriftschema::Type::DOUBLE;
+	case ColumnType::BYTE_ARRAY: return parquet::thriftschema::Type::BYTE_ARRAY;
+	case ColumnType::FIXED_LEN_BYTE_ARRAY: return parquet::thriftschema::Type::FIXED_LEN_BYTE_ARRAY;
+	}
+}
+
+
 
 class Element {
 public:
 	const std::string name;
 	const RepetitionType repetition;
 	Element* parent;
-	uint8_t r_level=0, d_level=0;
+	uint8_t r_level, d_level;
 
 	Element(const std::string& name, RepetitionType repetition, Element* parent, uint8_t r_level, uint8_t d_level)
 		: name(name), repetition(repetition), parent(parent), r_level(r_level), d_level(d_level) {}
+
 	virtual ~Element() {}
 
 	void levels(uint8_t r, uint8_t d) {
@@ -57,6 +83,11 @@ public:
 	std::string full_name(const std::string& separator=std::string(".")) {
 		if(parent == nullptr) return name;
 		else return parent->full_name(separator)+separator+name;
+	}
+
+	void path(std::vector<std::string>& pathvector) {
+		if (parent != nullptr) {parent->path(pathvector);
+		pathvector.push_back(name);}
 	}
 };
 
@@ -93,7 +124,7 @@ public:
 	GroupElement(const std::string& name, RepetitionType repetition, Element* parent, uint8_t r_level, uint8_t d_level)
 		: Element(name, repetition, parent, r_level, d_level), elements() {}
 
-	Element* find(std::string& name) {
+	Element* find(const std::string& name) {
 		for (auto* el: elements)
 			if (el->name == name) return el;
 		return nullptr;

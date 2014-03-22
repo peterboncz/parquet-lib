@@ -25,4 +25,19 @@ uint64_t vlq(uint8_t*& in) {
 }
 
 
+uint8_t* to_vlq(uint64_t x, uint8_t& size) {
+	int i, j;
+	for (i = 9; i > 0; i--) {
+		if (x & 127ULL << i * 7) break;
+	}
+	size = i+1;
+	uint8_t* out = new uint8_t[size];
+	for (j = 0; j <= i; j++)
+		out[j] = ((x >> ((i - j) * 7)) & 127) | 128;
+
+	out[i] ^= 128;
+	return out;
+}
+
+
 }}

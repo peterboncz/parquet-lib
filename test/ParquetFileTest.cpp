@@ -62,3 +62,13 @@ TEST(ParquetFileTest, NestedSchema) {
 	ASSERT_EQ(std::string("array_element"), array_element->name);
 }
 
+
+TEST(ParquetFileTest, Nested2Schema) {
+	ParquetFile file(std::string("testdata/nested-group-required-child.parquet"));
+	Element* schema = file.getSchema();
+	ASSERT_TRUE(schema != nullptr);
+	GroupElement* root = dynamic_cast<GroupElement*>(schema);
+	ASSERT_TRUE(root != nullptr);
+
+}
+
