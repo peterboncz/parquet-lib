@@ -1,0 +1,9 @@
+message nested {
+  required int64 myid;
+  repeated group Links {
+    required int64 linkid;
+    optional int64 ref;
+  }
+  required int64 test;
+}
+

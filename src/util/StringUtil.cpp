@@ -1,4 +1,7 @@
 #include "util/StringUtil.hpp"
+#include <fstream>
+#include <sstream>
+#include "Exception.hpp"
 
 namespace parquetbase {
 namespace util {
@@ -24,6 +27,16 @@ std::vector<std::string> split(std::string work, char delim, int rep) {
     if (!buf.empty())
         flds.push_back(buf);
     return flds;
+}
+
+
+std::string readFile(const std::string& filename) {
+	std::ifstream input(filename);
+	if (!input.is_open()) throw Exception("File not found: " + filename);
+	std::stringstream out;
+	std::string line;
+	while (std::getline(input,line)) out << line << "\n";
+	return out.str();
 }
 
 

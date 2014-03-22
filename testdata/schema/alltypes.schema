@@ -1,0 +1,10 @@
+message alltypes {
+  required int32 field1;
+  required int64 field2;
+  required int96 field3;
+  required float field4;
+  required double field5;
+  required boolean field6;
+  required string field7;
+}
+

@@ -23,12 +23,12 @@ bin/parquet_constants.o: gen/parquet_constants.cpp | gen
 bin/libparquet.a: $(src_files) bin/parquet_constants.o bin/parquet_types.o
 	ar rcs $@ $^
 
-bin/tester: $(test_files) bin/libparquet.a
+bin/tester: $(test_files) bin/libparquet.a | gtest
 	$(CXX) $(OPT) -o bin/tester $(test_files) bin/libparquet.a libs/gtest/libgtest.a $(CPPFLAGS) $(LDFLAGS)
 
 
 
-$(bin_dir)%.o: %.cpp | gen
+$(bin_dir)%.o: %.cpp | gen gtest
 	$(build_dir)
 	$(CXX) $(OPT) -MD -c -o $@ $< $(CPPFLAGS)
 	@cp $(bin_dir)$*.d $(bin_dir)$*.P; \
