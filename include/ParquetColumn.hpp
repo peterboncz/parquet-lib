@@ -21,8 +21,11 @@ protected:
 public:
 	ParquetColumn(uint8_t* mem, parquet::thriftschema::ColumnMetaData metadata, schema::SimpleElement* schema, uint8_t* dict_mem);
 
+	bool nextValue(uint8_t& r, uint8_t& d, uint8_t*& ptr);
 	uint8_t* nextValue(uint8_t& r, uint8_t& d);
 	uint32_t getValueSize();
+
+	schema::SimpleElement* getSchema() { return schema; }
 };
 
 

@@ -36,13 +36,20 @@ void ParquetColumn::nextPage() {
 }
 
 
-uint8_t* ParquetColumn::nextValue(uint8_t& r, uint8_t& d) {
-	if (cur_page == nullptr) return nullptr;
+bool ParquetColumn::nextValue(uint8_t& r, uint8_t& d, uint8_t*& ptr) {
+	if (cur_page == nullptr) return false;
 	if (cur_page->values_left() == 0) {
 		nextPage();
-		if (cur_page == nullptr) return nullptr;
+		if (cur_page == nullptr) return false;
 	}
-	return cur_page->nextValue(r, d);
+	ptr = cur_page->nextValue(r, d);
+	return true;
+}
+
+uint8_t* ParquetColumn::nextValue(uint8_t& r, uint8_t& d) {
+	uint8_t* ptr;
+	if (!nextValue(r, d, ptr)) return nullptr;
+	return ptr;
 }
 
 uint32_t ParquetColumn::getValueSize() {

@@ -23,12 +23,12 @@ bin/parquet_constants.o: gen/parquet_constants.cpp | gen
 bin/libparquet.a: $(src_files) bin/parquet_constants.o bin/parquet_types.o
 	ar rcs $@ $^
 
-bin/tester: $(test_files) bin/libparquet.a | gtest
+bin/tester: $(test_files) bin/libparquet.a libs/gtest/libgtest.a
 	$(CXX) $(OPT) -o bin/tester $(test_files) bin/libparquet.a libs/gtest/libgtest.a $(CPPFLAGS) $(LDFLAGS)
 
+$(test_files): libs/gtest/include/gtest/gtest.h
 
-
-$(bin_dir)%.o: %.cpp | gen gtest
+$(bin_dir)%.o: %.cpp | gen
 	$(build_dir)
 	$(CXX) $(OPT) -MD -c -o $@ $< $(CPPFLAGS)
 	@cp $(bin_dir)$*.d $(bin_dir)$*.P; \
@@ -46,7 +46,9 @@ gen:
 	mkdir -p gen
 	thrift --gen cpp -out gen src/schema/parquet.thrift
 
-gtest:	
+libs/gtest/libgtest.a:
 	libs/gtest.sh
 
-.PHONY: clean gtest
+libs/gtest/include/gtest/gtest.h: libs/gtest/libgtest.a
+
+.PHONY: clean

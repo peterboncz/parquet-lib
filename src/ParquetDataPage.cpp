@@ -28,18 +28,20 @@ ParquetDataPage::ParquetDataPage(uint8_t* mem, uint64_t mem_size,
 	d_level = schema->d_level;
 	value_size = schema->columnSize();
 	uint64_t size = mem_size;
-	if (schema->parent->parent == nullptr) { // column is not nested -> r_levels are omitted
+	// column is not nested -> r_levels are omitted
+	if (schema->parent->parent == nullptr) {
 		omit_r_levels = true;
 	} else {
 		r_decoder = encoding::RleDecoder(mem, size, util::bitwidth(schema->r_level));
 		this->mem_size -= size;
-		size = mem_size;
 		this->mem += size;
+		size = mem_size;
 	}
-	if (schema->repetition == schema::RepetitionType::REQUIRED) { // column is required -> d_levels are omitted
+	// column is required and top-level -> d_levels are omitted
+	if (schema->repetition == schema::RepetitionType::REQUIRED && schema->parent->parent == nullptr) {
 		omit_d_levels = true;
 	} else {
-		d_decoder = encoding::RleDecoder(mem, size, util::bitwidth(schema->d_level));
+		d_decoder = encoding::RleDecoder(this->mem, size, util::bitwidth(schema->d_level));
 		this->mem_size -= size;
 		this->mem += size;
 	}
@@ -51,12 +53,12 @@ ParquetDataPage::ParquetDataPage(uint8_t* mem, uint64_t mem_size,
 
 uint8_t* ParquetDataPage::nextValue(uint8_t& r, uint8_t& d) {
 	if (num_values == 0) return nullptr;
-	if (omit_r_levels) r = 1;
+	if (omit_r_levels) r = 0;
 	else r_decoder.get(r);
 	if (omit_d_levels) d = d_level;
 	else d_decoder.get(d);
-	if (d != d_level) return nullptr;
 	num_values--;
+	if (d != d_level) return nullptr;
 	return data_decoder->nextValue();
 }
 

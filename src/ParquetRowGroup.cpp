@@ -18,6 +18,7 @@ ParquetColumn ParquetRowGroup::column(const std::string& full_name) {
 	schema::Element* element = schema;
 	for (std::string& s : parts) {
 		element = dynamic_cast<schema::GroupElement*>(element)->find(s);
+		if (element == nullptr) throw Exception("column not found: "+full_name);
 	}
 	for (auto c : metadata.columns) {
 		if (parts == c.meta_data.path_in_schema) {
