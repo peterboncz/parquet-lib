@@ -20,6 +20,7 @@ public:
 
 
 	ParquetColumn column(const std::string& full_name);
+	ParquetColumn column(schema::SimpleElement* element);
 };
 
 

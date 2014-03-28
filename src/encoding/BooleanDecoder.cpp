@@ -5,12 +5,13 @@ namespace encoding {
 
 
 BooleanDecoder::BooleanDecoder(uint8_t* buffer, uint64_t size)
-		: buffer(buffer), bufferend(buffer+size-1) {
+		: buffer(buffer), bufferend(buffer+size-1), value(new uint8_t) {
 }
 
 
 uint8_t* BooleanDecoder::nextValue() {
-	return nullptr;
+	*value = uint8_t(get());
+	return value;
 }
 
 

@@ -34,5 +34,22 @@ ParquetColumn ParquetRowGroup::column(const std::string& full_name) {
 	throw Exception("column not found: "+full_name);
 }
 
+ParquetColumn ParquetRowGroup::column(schema::SimpleElement* element) {
+	std::vector<std::string> path;
+	element->path(path);
+	for (auto c : metadata.columns) {
+		if (path == c.meta_data.path_in_schema) {
+			uint8_t* mem = parquetfile->file_mem + c.meta_data.data_page_offset;
+			uint8_t* dict_mem = nullptr;
+			if (c.meta_data.__isset.dictionary_page_offset) {
+				dict_mem = parquetfile->file_mem + c.meta_data.dictionary_page_offset;
+			}
+			ParquetColumn col(mem, c.meta_data, element, dict_mem);
+			return std::move(col);
+		}
+	}
+	throw Exception("column not found: "+element->name);
+}
+
 
 }

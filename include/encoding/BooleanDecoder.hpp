@@ -11,6 +11,7 @@ protected:
 	uint8_t* buffer;
 	uint8_t* bufferend;
 	uint8_t offset = 0;
+	uint8_t* value;
 public:
 	BooleanDecoder(uint8_t* buffer, uint64_t size);
 	~BooleanDecoder() {}

@@ -56,7 +56,7 @@ TEST_F(ParquetWriterTest, Simple) {
 	ASSERT_EQ(RepetitionType::REQUIRED, linkid->repetition);
 	ASSERT_EQ(RepetitionType::REQUIRED, ref->repetition);
 
-	ParquetTupleReader reader1(&file, {"myid","test"});
+	ParquetTupleReader reader1(&file, {string("myid"),string("test")});
 	for (uint64_t i=1; i <= 4; i++) {
 		ASSERT_TRUE(reader1.next());
 		ASSERT_EQ(i, reader1.getValue<uint64_t>(0));
@@ -64,7 +64,7 @@ TEST_F(ParquetWriterTest, Simple) {
 	}
 	ASSERT_FALSE(reader1.next());
 
-	ParquetTupleReader reader2(&file, {"Links.linkid","Links.ref"});
+	ParquetTupleReader reader2(&file, {string("Links.linkid"),string("Links.ref")});
 	for (uint64_t i=1; i <= 4; i++) {
 		ASSERT_TRUE(reader2.next());
 		ASSERT_EQ(1, reader2.getValue<uint64_t>(0));
@@ -83,7 +83,7 @@ TEST_F(ParquetWriterTest, Repetition) {
 	}
 	ParquetFile file(std::string("testdata/out.parquet"));
 
-	ParquetTupleReader reader1(&file, {"myid","test"});
+	ParquetTupleReader reader1(&file, {string("myid"),string("test")});
 	for (uint64_t i=1; i <= 4; i++) {
 		ASSERT_TRUE(reader1.next());
 		ASSERT_EQ(i, reader1.getValue<uint64_t>(0));
@@ -91,7 +91,7 @@ TEST_F(ParquetWriterTest, Repetition) {
 	}
 	ASSERT_FALSE(reader1.next());
 
-	ParquetTupleReader reader2(&file, {"Links.linkid","Links.ref"}, true, true);
+	ParquetTupleReader reader2(&file, {string("Links.linkid"),string("Links.ref")}, true, true);
 	for (uint64_t i=1; i <= 3; i++) {
 		for (uint64_t j=1; j <=3; j++) {
 			ASSERT_TRUE(reader2.next());
@@ -118,7 +118,7 @@ TEST_F(ParquetWriterTest, OptionalNull) {
 	}
 	ParquetFile file(std::string("testdata/out.parquet"));
 
-	ParquetTupleReader reader1(&file, {"myid","test"});
+	ParquetTupleReader reader1(&file, {string("myid"),string("test")});
 	for (uint64_t i=1; i <= 4; i++) {
 		ASSERT_TRUE(reader1.next());
 		ASSERT_EQ(i, reader1.getValue<uint64_t>(0));
@@ -126,7 +126,7 @@ TEST_F(ParquetWriterTest, OptionalNull) {
 	}
 	ASSERT_FALSE(reader1.next());
 
-	ParquetTupleReader reader2(&file, {"Links.linkid","Links.ref"}, true, true);
+	ParquetTupleReader reader2(&file, {string("Links.linkid"),string("Links.ref")}, true, true);
 	for (uint64_t i=1; i <= 3; i++) {
 		for (uint64_t j=1; j <=3; j++) {
 			ASSERT_TRUE(reader2.next());
@@ -142,3 +142,12 @@ TEST_F(ParquetWriterTest, OptionalNull) {
 	ASSERT_FALSE(reader2.next());
 }
 
+/*
+TEST_F(ParquetWriterTest, SimpleInt) {
+	SchemaParser parser("testdata/schema/simpleint.schema");
+	GroupElement* schema = parser.parseSchema();
+	ParquetWriter w(schema, "testdata/simpleint.parquet");
+	w.put("testdata/json/simpleint.json");
+	w.write();
+}
+*/

@@ -1,0 +1,5 @@
+message simpleint {
+  required int64 field1;
+  required int64 field2;
+}
+
