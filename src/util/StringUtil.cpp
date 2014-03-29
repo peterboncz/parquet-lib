@@ -1,6 +1,7 @@
 #include "util/StringUtil.hpp"
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 #include "Exception.hpp"
 
 namespace parquetbase {
@@ -50,5 +51,11 @@ void replaceAll(std::string& str, const std::string& from, const std::string& to
     }
 }
 
+
+std::string toLower(const std::string& input) {
+	std::string output{input};
+	std::transform(output.begin(), output.end(), output.begin(), ::tolower);
+	return output;
+}
 
 }}

@@ -70,6 +70,7 @@ TEST(ParquetTupleReaderTest, NestedSchemaVirtualFks) {
 		ASSERT_EQ((i%3)+100, reader.getValue<uint64_t>(1)); // Links.ref
 		ASSERT_EQ(i+1, reader.getValue<uint32_t>(2)); // id (virtual)
 		ASSERT_EQ(fk, reader.getValue<uint32_t>(3)); // fk (virtual)
+		ASSERT_EQ(fk, *reinterpret_cast<uint32_t*>(reader.getValuePtr(3))); // fk (virtual)
 	}
 	ASSERT_FALSE(reader.next());
 }

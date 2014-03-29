@@ -14,4 +14,6 @@ std::string readFile(const std::string& filename);
 
 void replaceAll(std::string& str, const std::string& from, const std::string& to);
 
+std::string toLower(const std::string& input);
+
 }}
