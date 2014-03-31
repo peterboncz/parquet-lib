@@ -22,6 +22,7 @@ protected:
 	bool virtual_ids, virtual_fks;
 	uint32_t* id_ptr = nullptr;
 	uint32_t* fk_ptr = nullptr;
+	void init(std::vector<ParquetColumn> pcolumns);
 public:
 	ParquetTupleReader(ParquetFile* file, std::vector<std::string> column_names, bool virtual_ids=false, bool virtual_fks=false);
 	ParquetTupleReader(ParquetFile* file, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids=false, bool virtual_fks=false);

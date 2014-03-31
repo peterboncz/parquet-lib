@@ -19,7 +19,7 @@
 /**
  * File format description for the parquet file format
  */
-namespace cpp parquet.thriftschema
+namespace cpp parquetbase.schema.thrift
 namespace java parquet.format
 
 /**

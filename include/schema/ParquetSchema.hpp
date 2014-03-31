@@ -11,20 +11,20 @@ namespace schema {
 enum class RepetitionType : std::uint8_t { REQUIRED = 0, OPTIONAL = 1, REPEATED = 2 };
 
 
-inline RepetitionType map(parquet::thriftschema::FieldRepetitionType::type type) {
+inline RepetitionType map(thrift::FieldRepetitionType::type type) {
 	switch (type) {
-		case parquet::thriftschema::FieldRepetitionType::REQUIRED: return RepetitionType::REQUIRED;
-		case parquet::thriftschema::FieldRepetitionType::OPTIONAL: return RepetitionType::OPTIONAL;
-		case parquet::thriftschema::FieldRepetitionType::REPEATED: return RepetitionType::REPEATED;
+		case thrift::FieldRepetitionType::REQUIRED: return RepetitionType::REQUIRED;
+		case thrift::FieldRepetitionType::OPTIONAL: return RepetitionType::OPTIONAL;
+		case thrift::FieldRepetitionType::REPEATED: return RepetitionType::REPEATED;
 	}
 }
 
 
-inline parquet::thriftschema::FieldRepetitionType::type unmap(RepetitionType type) {
+inline thrift::FieldRepetitionType::type unmap(RepetitionType type) {
 	switch(type) {
-	case RepetitionType::REQUIRED: return parquet::thriftschema::FieldRepetitionType::REQUIRED;
-	case RepetitionType::OPTIONAL: return parquet::thriftschema::FieldRepetitionType::OPTIONAL;
-	case RepetitionType::REPEATED: return parquet::thriftschema::FieldRepetitionType::REPEATED;
+	case RepetitionType::REQUIRED: return thrift::FieldRepetitionType::REQUIRED;
+	case RepetitionType::OPTIONAL: return thrift::FieldRepetitionType::OPTIONAL;
+	case RepetitionType::REPEATED: return thrift::FieldRepetitionType::REPEATED;
 	}
 }
 
@@ -35,30 +35,30 @@ enum class ColumnType : std::uint8_t {
 };
 
 
-inline ColumnType map(parquet::thriftschema::Type::type type) {
+inline ColumnType map(thrift::Type::type type) {
 	switch (type) {
-		case parquet::thriftschema::Type::BOOLEAN: return ColumnType::BOOLEAN;
-		case parquet::thriftschema::Type::INT32: return ColumnType::INT32;
-		case parquet::thriftschema::Type::INT64: return ColumnType::INT64;
-		case parquet::thriftschema::Type::INT96: return ColumnType::INT96;
-		case parquet::thriftschema::Type::FLOAT: return ColumnType::FLOAT;
-		case parquet::thriftschema::Type::DOUBLE: return ColumnType::DOUBLE;
-		case parquet::thriftschema::Type::BYTE_ARRAY: return ColumnType::BYTE_ARRAY;
-		case parquet::thriftschema::Type::FIXED_LEN_BYTE_ARRAY: return ColumnType::FIXED_LEN_BYTE_ARRAY;
+		case thrift::Type::BOOLEAN: return ColumnType::BOOLEAN;
+		case thrift::Type::INT32: return ColumnType::INT32;
+		case thrift::Type::INT64: return ColumnType::INT64;
+		case thrift::Type::INT96: return ColumnType::INT96;
+		case thrift::Type::FLOAT: return ColumnType::FLOAT;
+		case thrift::Type::DOUBLE: return ColumnType::DOUBLE;
+		case thrift::Type::BYTE_ARRAY: return ColumnType::BYTE_ARRAY;
+		case thrift::Type::FIXED_LEN_BYTE_ARRAY: return ColumnType::FIXED_LEN_BYTE_ARRAY;
 	}
 }
 
 
-inline parquet::thriftschema::Type::type unmap(ColumnType type) {
+inline thrift::Type::type unmap(ColumnType type) {
 	switch(type) {
-	case ColumnType::BOOLEAN: return parquet::thriftschema::Type::BOOLEAN;
-	case ColumnType::INT32: return parquet::thriftschema::Type::INT32;
-	case ColumnType::INT64: return parquet::thriftschema::Type::INT64;
-	case ColumnType::INT96: return parquet::thriftschema::Type::INT96;
-	case ColumnType::FLOAT: return parquet::thriftschema::Type::FLOAT;
-	case ColumnType::DOUBLE: return parquet::thriftschema::Type::DOUBLE;
-	case ColumnType::BYTE_ARRAY: return parquet::thriftschema::Type::BYTE_ARRAY;
-	case ColumnType::FIXED_LEN_BYTE_ARRAY: return parquet::thriftschema::Type::FIXED_LEN_BYTE_ARRAY;
+	case ColumnType::BOOLEAN: return thrift::Type::BOOLEAN;
+	case ColumnType::INT32: return thrift::Type::INT32;
+	case ColumnType::INT64: return thrift::Type::INT64;
+	case ColumnType::INT96: return thrift::Type::INT96;
+	case ColumnType::FLOAT: return thrift::Type::FLOAT;
+	case ColumnType::DOUBLE: return thrift::Type::DOUBLE;
+	case ColumnType::BYTE_ARRAY: return thrift::Type::BYTE_ARRAY;
+	case ColumnType::FIXED_LEN_BYTE_ARRAY: return thrift::Type::FIXED_LEN_BYTE_ARRAY;
 	}
 }
 

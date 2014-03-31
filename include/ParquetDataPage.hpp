@@ -14,7 +14,7 @@ protected:
 	uint64_t mem_size;
 	uint32_t value_size; // in bytes // TODO: BOOLEAN and BYTE_ARRAY need special treatment
 	uint32_t num_values;
-	parquet::thriftschema::DataPageHeader metadata;
+	schema::thrift::DataPageHeader metadata;
 	schema::SimpleElement* schema;
 	encoding::RleDecoder r_decoder, d_decoder;
 	uint8_t r_level, d_level;
@@ -24,7 +24,7 @@ protected:
 	void initDecoder();
 public:
 	ParquetDataPage(uint8_t* mem, uint64_t mem_size,
-		parquet::thriftschema::DataPageHeader metadata, schema::SimpleElement* schema, ParquetDictionaryPage* dict);
+		schema::thrift::DataPageHeader metadata, schema::SimpleElement* schema, ParquetDictionaryPage* dict);
 
 	// returns pointer to memory with the next value, size of memroy depends von value_size
 	// memory is read-only and not guaranteed to be valid after another call is made

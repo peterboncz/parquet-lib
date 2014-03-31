@@ -118,14 +118,14 @@ void ParquetWriter::putMessage(StringVector path, const rapidjson::Value& object
 }
 
 
-typedef parquet::thriftschema::SchemaElement ThriftSchema;
-typedef std::vector<parquet::thriftschema::SchemaElement> SchemaVector;
+typedef schema::thrift::SchemaElement ThriftSchema;
+typedef std::vector<schema::thrift::SchemaElement> SchemaVector;
 
 void generateSchemaInner(SchemaVector& schemavec, schema::GroupElement* schema, bool root=false) {
 	ThriftSchema s;
 	s.__set_name(schema->name);
 	s.__set_num_children(schema->elements.size());
-	if (!root) s.__set_repetition_type(parquet::thriftschema::FieldRepetitionType::REPEATED);
+	if (!root) s.__set_repetition_type(schema::thrift::FieldRepetitionType::REPEATED);
 	schemavec.push_back(s);
 	for (auto* el : schema->elements) {
 		if (dynamic_cast<schema::GroupElement*>(el) != nullptr) {
@@ -168,14 +168,14 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 		dmem = encoding::encodeRle(d_levels, util::bitwidth(schema->d_level), dsize);
 	uint64_t datasize = ptrs.second - ptrs.first;
 
-	parquet::thriftschema::DataPageHeader dph;
-	dph.__set_encoding(parquet::thriftschema::Encoding::PLAIN);
-	dph.__set_definition_level_encoding(parquet::thriftschema::Encoding::RLE);
-	dph.__set_repetition_level_encoding(parquet::thriftschema::Encoding::RLE);
+	schema::thrift::DataPageHeader dph;
+	dph.__set_encoding(schema::thrift::Encoding::PLAIN);
+	dph.__set_definition_level_encoding(schema::thrift::Encoding::RLE);
+	dph.__set_repetition_level_encoding(schema::thrift::Encoding::RLE);
 	dph.__set_num_values(r_levels.size());
-	parquet::thriftschema::PageHeader ph;
+	schema::thrift::PageHeader ph;
 	ph.__set_data_page_header(dph);
-	ph.__set_type(parquet::thriftschema::PageType::DATA_PAGE);
+	ph.__set_type(schema::thrift::PageType::DATA_PAGE);
 	ph.__set_uncompressed_page_size(datasize+rsize+dsize);
 	ph.__set_compressed_page_size(datasize+rsize+dsize);
 	uint64_t headersize = 0;
@@ -189,27 +189,27 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 }
 
 void ParquetWriter::write() {
-	std::vector<parquet::thriftschema::Encoding::type> encodings;
-	encodings.push_back(parquet::thriftschema::Encoding::PLAIN);
-	encodings.push_back(parquet::thriftschema::Encoding::RLE);
+	std::vector<schema::thrift::Encoding::type> encodings;
+	encodings.push_back(schema::thrift::Encoding::PLAIN);
+	encodings.push_back(schema::thrift::Encoding::RLE);
 	std::ofstream outfile(filename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 	outfile.write("PAR1", 4);
-	parquet::thriftschema::FileMetaData* filemeta = new parquet::thriftschema::FileMetaData();
+	schema::thrift::FileMetaData* filemeta = new schema::thrift::FileMetaData();
 	filemeta->__set_num_rows(num_rows);
 	filemeta->__set_version(3);
 	filemeta->__set_created_by(std::string("parquetbaselib"));
 	filemeta->__set_schema(generateSchema(schema));
-	parquet::thriftschema::RowGroup rg;
+	schema::thrift::RowGroup rg;
 	rg.__set_num_rows(num_rows);
-	std::vector<parquet::thriftschema::ColumnChunk> colchunks;
+	std::vector<schema::thrift::ColumnChunk> colchunks;
 	for (auto col : columns) {
-		parquet::thriftschema::ColumnChunk colchunk;
-		parquet::thriftschema::ColumnMetaData colmeta;
+		schema::thrift::ColumnChunk colchunk;
+		schema::thrift::ColumnMetaData colmeta;
 		std::vector<std::string> path_in_schema;
 		col.first->path(path_in_schema);
 		colmeta.__set_path_in_schema(path_in_schema);
 		colmeta.__set_type(schema::unmap(col.first->type));
-		colmeta.__set_codec(parquet::thriftschema::CompressionCodec::UNCOMPRESSED);
+		colmeta.__set_codec(schema::thrift::CompressionCodec::UNCOMPRESSED);
 		colmeta.__set_num_values(d_levels[col.first].size());
 		colmeta.__set_encodings(encodings);
 		long pos = outfile.tellp();
@@ -223,7 +223,7 @@ void ParquetWriter::write() {
 		colchunks.push_back(colchunk);
 	}
 	rg.__set_columns(colchunks);
-	std::vector<parquet::thriftschema::RowGroup> rowgroups;
+	std::vector<schema::thrift::RowGroup> rowgroups;
 	rowgroups.push_back(rg);
 	filemeta->__set_row_groups(rowgroups);
 	uint64_t metasize = 0;

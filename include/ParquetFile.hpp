@@ -11,8 +11,8 @@
 
 namespace parquetbase {
 
-typedef std::vector<parquet::thriftschema::SchemaElement> ThriftSchema;
-typedef parquet::thriftschema::SchemaElement ThriftElement;
+typedef std::vector<schema::thrift::SchemaElement> ThriftSchema;
+typedef schema::thrift::SchemaElement ThriftElement;
 
 class ParquetRowGroup;
 
@@ -26,7 +26,7 @@ protected:
 	schema::Element* schema;
 	uint8_t level_maxvalue = 0;
 
-	parquet::thriftschema::FileMetaData* filemetadata;
+	schema::thrift::FileMetaData* filemetadata;
 
 	schema::Element* readSchema();
 	schema::Element* readSchemaElement(ThriftSchema::const_iterator& it, schema::Element* parent);

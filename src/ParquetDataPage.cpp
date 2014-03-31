@@ -7,9 +7,9 @@ namespace parquetbase {
 
 
 void ParquetDataPage::initDecoder() {
-	if (metadata.encoding == parquet::thriftschema::Encoding::PLAIN_DICTIONARY) {
+	if (metadata.encoding == schema::thrift::Encoding::PLAIN_DICTIONARY) {
 		data_decoder = new encoding::PlainDictionaryDecoder(mem, mem_size, dict);
-	} else if (metadata.encoding == parquet::thriftschema::Encoding::PLAIN) {
+	} else if (metadata.encoding == schema::thrift::Encoding::PLAIN) {
 		if (schema->type == schema::ColumnType::BYTE_ARRAY) {
 			data_decoder = new encoding::PlainByteArrayDecoder(mem, mem_size);
 		} else if (schema->type == schema::ColumnType::BOOLEAN) {
@@ -22,7 +22,7 @@ void ParquetDataPage::initDecoder() {
 
 
 ParquetDataPage::ParquetDataPage(uint8_t* mem, uint64_t mem_size,
-		parquet::thriftschema::DataPageHeader metadata, schema::SimpleElement* schema, ParquetDictionaryPage* dict)
+		schema::thrift::DataPageHeader metadata, schema::SimpleElement* schema, ParquetDictionaryPage* dict)
 		: mem(mem), mem_size(mem_size), metadata(metadata), schema(schema), dict(dict) {
 	r_level = schema->r_level;
 	d_level = schema->d_level;

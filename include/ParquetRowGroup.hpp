@@ -14,10 +14,9 @@ class ParquetRowGroup {
 protected:
 	ParquetFile* parquetfile;
 	schema::Element* schema;
-	parquet::thriftschema::RowGroup metadata;
+	schema::thrift::RowGroup metadata;
 public:
-	ParquetRowGroup(ParquetFile* parquetfile, parquet::thriftschema::RowGroup& metadata);
-
+	ParquetRowGroup(ParquetFile* parquetfile, schema::thrift::RowGroup& metadata);
 
 	ParquetColumn column(const std::string& full_name);
 	ParquetColumn column(schema::SimpleElement* element);

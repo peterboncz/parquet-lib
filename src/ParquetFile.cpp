@@ -21,7 +21,7 @@ ParquetFile::ParquetFile(const std::string& filename) : filename(filename) {
 	if (memcmp(file_mem+file_size-4, "PAR1", 4) != 0) throw Exception("not a parquet file: "+filename);
 	uint64_t footersize = *reinterpret_cast<uint32_t*>(file_mem+file_size-8);
     uint8_t* buf = file_mem + (file_size-8-footersize);
-    filemetadata = util::thrift_deserialize<parquet::thriftschema::FileMetaData>(buf, footersize);
+    filemetadata = util::thrift_deserialize<schema::thrift::FileMetaData>(buf, footersize);
 	schema = readSchema();
 }
 
