@@ -150,4 +150,13 @@ TEST_F(ParquetWriterTest, SimpleInt) {
 	w.put("testdata/json/simpleint.json");
 	w.write();
 }
+
+
+TEST_F(ParquetWriterTest, NestedOptionalNull) {
+	SchemaParser parser("testdata/schema/nested-optional.schema");
+	GroupElement* schema = parser.parseSchema();
+	ParquetWriter w(schema, "testdata/nested-optional.parquet");
+	w.put("testdata/json/nested-optional-repetition.json");
+	w.write();
+}
 */
