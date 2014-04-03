@@ -2,13 +2,14 @@
 
 #include <string>
 #include <vector>
+#include "TupleReader.hpp"
 #include "ParquetFile.hpp"
 #include "ParquetColumn.hpp"
 #include "schema/ParquetSchema.hpp"
 
 namespace parquetbase {
 
-class ParquetTupleReader {
+class ParquetTupleReader : public TupleReader {
 protected:
 	typedef std::pair<uint8_t, uint8_t> Levels; // <r_level, d_level>
 	std::vector<std::string> column_names;
@@ -31,10 +32,6 @@ public:
 	template <typename T>
 	T getValue(uint8_t column) { return *reinterpret_cast<T*>(getValuePtr(column)); }
 	uint32_t getValueSize(uint8_t column);
-
-	static std::vector<ParquetTupleReader*> readers;
-	static ParquetTupleReader* reader(uint8_t index);
-	static uint8_t putReader(ParquetTupleReader* reader);
 };
 
 

@@ -95,18 +95,4 @@ uint32_t ParquetTupleReader::getValueSize(uint8_t column) {
 }
 
 
-std::vector<ParquetTupleReader*> ParquetTupleReader::readers{};
-
-
-ParquetTupleReader* ParquetTupleReader::reader(uint8_t index) {
-	return readers[index];
-}
-
-
-uint8_t ParquetTupleReader::putReader(ParquetTupleReader* reader) {
-	readers.push_back(reader);
-	return readers.size()-1;
-}
-
-
 }

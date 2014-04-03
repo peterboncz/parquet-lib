@@ -52,15 +52,45 @@ TEST(JsonTupleReaderTest, Strings) {
 TEST(JsonTupleReaderTest, NestedSchema) {
 	SchemaParser parser{"testdata/schema/nested.schema"};
 	GroupElement* root = parser.parseSchema();
-	std::vector<SimpleElement*> columns;
-	JsonTupleReader reader{"testdata/json/nested-required-norepetition.json", root, columns};
-	ASSERT_EQ(4, reader.numColumns());
-	for (uint64_t i=1; i <= 4; i++) {
-		ASSERT_TRUE(reader.next());
-		ASSERT_EQ(i, reader.getValue<uint64_t>(0));
-		ASSERT_EQ(1, reader.getValue<uint64_t>(1));
-		ASSERT_EQ(101, reader.getValue<uint64_t>(2));
-		ASSERT_EQ(i, reader.getValue<uint64_t>(3));
+	{ // All columns
+		std::vector<SimpleElement*> columns;
+		JsonTupleReader reader{"testdata/json/nested-required-norepetition.json", root, columns};
+		ASSERT_EQ(4, reader.numColumns());
+		for (uint64_t i=1; i <= 4; i++) {
+			ASSERT_TRUE(reader.next());
+			ASSERT_EQ(i, reader.getValue<uint64_t>(0));
+			ASSERT_EQ(1, reader.getValue<uint64_t>(1));
+			ASSERT_EQ(101, reader.getValue<uint64_t>(2));
+			ASSERT_EQ(i, reader.getValue<uint64_t>(3));
+		}
+	}
+	{ // Only top columns
+		std::vector<SimpleElement*> columns;
+		for (auto* el : root->elements) {
+			if (dynamic_cast<SimpleElement*>(el) != nullptr)
+				columns.push_back(dynamic_cast<SimpleElement*>(el));
+		}
+		JsonTupleReader reader{"testdata/json/nested-required-norepetition.json", root, columns};
+		ASSERT_EQ(2, reader.numColumns());
+		for (uint64_t i=1; i <= 4; i++) {
+			ASSERT_TRUE(reader.next());
+			ASSERT_EQ(i, reader.getValue<uint64_t>(0));
+			ASSERT_EQ(i, reader.getValue<uint64_t>(1));
+		}
+	}
+	{ // Only columns of nested.Links (linkid, ref)
+		std::vector<SimpleElement*> columns;
+		for (auto* el : dynamic_cast<GroupElement*>(root->elements[1])->elements) {
+				columns.push_back(dynamic_cast<SimpleElement*>(el));
+		}
+		JsonTupleReader reader{"testdata/json/nested-required-norepetition.json", root, columns};
+		ASSERT_EQ(2, reader.numColumns());
+		for (uint64_t i=1; i <= 4; i++) {
+			ASSERT_TRUE(reader.next());
+			ASSERT_EQ(1, reader.getValue<uint64_t>(0));
+			ASSERT_EQ(101, reader.getValue<uint64_t>(1));
+		}
 	}
 }
+
 

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <functional>
+#include "TupleReader.hpp"
 #include "ParquetFile.hpp"
 #include "ParquetColumn.hpp"
 #include "schema/ParquetSchema.hpp"
@@ -13,7 +13,7 @@ namespace parquetbase {
 namespace json {
 
 
-class JsonTupleReader {
+class JsonTupleReader : public TupleReader {
 protected:
 	class Reader {
 	public:
