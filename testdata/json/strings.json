@@ -1,0 +1,6 @@
+[
+{"field1": 1, "field2": "Bla Bla1", "field3": "Blub"},
+{"field1": 2, "field2": "Bla Bla2", "field3": "Blub"},
+{"field1": 3, "field2": "Bla Bla3", "field3": null},
+{"field1": 4, "field2": "Bla Bla4"}
+]

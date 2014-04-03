@@ -62,6 +62,19 @@ inline thrift::Type::type unmap(ColumnType type) {
 	}
 }
 
+inline uint32_t size(ColumnType type) {
+	switch(type) {
+	case ColumnType::BOOLEAN: return 1;
+	case ColumnType::INT32: return 4;
+	case ColumnType::INT64: return 8;
+	case ColumnType::INT96: return 12;
+	case ColumnType::FLOAT: return 4;
+	case ColumnType::DOUBLE: return 8;
+	case ColumnType::BYTE_ARRAY: return 0;
+	case ColumnType::FIXED_LEN_BYTE_ARRAY: return 0;
+	}
+}
+
 
 
 class Element {

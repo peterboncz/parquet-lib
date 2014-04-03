@@ -1,0 +1,6 @@
+message schemawithstrings {
+  required int64 field1;
+  required string field2;
+  optional string field3;
+}
+
