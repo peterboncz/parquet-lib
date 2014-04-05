@@ -94,3 +94,22 @@ TEST(JsonTupleReaderTest, NestedSchema) {
 }
 
 
+TEST(JsonTupleReaderTest, NestedDoubleRepetitionSchema) {
+	SchemaParser parser{"testdata/schema/nested-doublerepetition.schema"};
+	GroupElement* root = parser.parseSchema();
+	std::vector<SimpleElement*> columns;
+	JsonTupleReader reader{"testdata/json/nested-doublerepetition.json", root, columns};
+	ASSERT_EQ(3, reader.numColumns());
+	for (int i=1; i<=2; i++) {
+		for (int f1=1; f1<=3; f1++) {
+			for (int f2=1; f2<=3; f2++) {
+				ASSERT_TRUE(reader.next());
+				ASSERT_EQ(i, reader.getValue<uint64_t>(0));
+				ASSERT_EQ(f1, reader.getValue<uint64_t>(1));
+				ASSERT_EQ(f2, reader.getValue<uint64_t>(2));
+			}
+		}
+	}
+	ASSERT_FALSE(reader.next());
+}
+

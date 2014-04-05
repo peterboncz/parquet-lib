@@ -8,11 +8,10 @@ namespace parquetbase {
 namespace json {
 
 
-
 bool JsonTupleReader::RepeatedReader::next() {
 	if (!reader->next()) {
-		if (it != val.End()) {
-			reader->reset(*it);
+		if (it != val->End()) {
+			reader->reset(it);
 			++it;
 			return reader->next();
 		}
@@ -21,16 +20,16 @@ bool JsonTupleReader::RepeatedReader::next() {
 	return true;
 }
 
-void JsonTupleReader::RepeatedReader::reset(rapidjson::Value& v) {
+void JsonTupleReader::RepeatedReader::reset(rapidjson::Value::ValueIterator v) {
 	val = v;
-	it = val.Begin();
-	reader->reset(*it);
+	it = val->Begin();
+	reader->reset(it);
 	++it;
 }
 
 void JsonTupleReader::RepeatedReader::reset() {
-	it = val.Begin();
-	reader->reset(*it);
+	it = val->Begin();
+	reader->reset(it);
 	++it;
 }
 
@@ -39,8 +38,9 @@ JsonTupleReader::GroupReader::GroupReader() {
 }
 
 bool JsonTupleReader::GroupReader::next() {
-	if (!repeated.back()->next()) {
-		int index = repeated.size()-1;
+	auto back = repeated.back();
+	if (!back->next()) {
+		int index = repeated.size()-2;
 		while(index >= 0) {
 			if (!repeated[index]->next())
 				--index;
@@ -51,15 +51,16 @@ bool JsonTupleReader::GroupReader::next() {
 				repeated[i]->reset();
 				repeated[i]->next();
 			}
-			repeated.back()->reset();
+			back->reset();
+			back->next();
 		} else return false;
 	}
 	return true;
 }
 
-void JsonTupleReader::GroupReader::reset(rapidjson::Value& v) {
+void JsonTupleReader::GroupReader::reset(rapidjson::Value::ValueIterator v) {
 	for (auto& p : readers) {
-		p.second->reset(v[p.first.c_str()]);
+		p.second->reset(&(*v)[p.first.c_str()]);
 		if (repeated.back() != p.second)
 			p.second->next();
 	}
@@ -73,22 +74,22 @@ void JsonTupleReader::GroupReader::reset() {
 bool JsonTupleReader::SimpleReader::next() {
 	if (!nexted) {
 		jsonreader->nulls[slot] = false;
-		switch(val.GetType()) {
+		switch(val->GetType()) {
 		case rapidjson::Type::kNumberType:
-			if (val.IsDouble()) {
-				*reinterpret_cast<double*>(jsonreader->values[slot]) = val.GetDouble();
-			} else if (val.IsInt64()) {
-				*reinterpret_cast<int64_t*>(jsonreader->values[slot]) = val.GetInt64();
+			if (val->IsDouble()) {
+				*reinterpret_cast<double*>(jsonreader->values[slot]) = val->GetDouble();
+			} else if (val->IsInt64()) {
+				*reinterpret_cast<int64_t*>(jsonreader->values[slot]) = val->GetInt64();
 			} else
 				throw Exception("Unsupported number type");
 			break;
 		case rapidjson::Type::kFalseType:
 		case rapidjson::Type::kTrueType:
-			*reinterpret_cast<uint8_t*>(jsonreader->values[slot]) = val.GetBool()?1:0;
+			*reinterpret_cast<uint8_t*>(jsonreader->values[slot]) = val->GetBool()?1:0;
 			break;
 		case rapidjson::Type::kStringType: {
-			jsonreader->values[slot] = reinterpret_cast<uint8_t*>(const_cast<char*>(val.GetString()));
-			jsonreader->valuesizes[slot] = val.GetStringLength();
+			jsonreader->values[slot] = reinterpret_cast<uint8_t*>(const_cast<char*>(val->GetString()));
+			jsonreader->valuesizes[slot] = val->GetStringLength();
 			break;
 		}
 		case rapidjson::Type::kNullType:
@@ -108,7 +109,7 @@ void JsonTupleReader::SimpleReader::reset() {
 	nexted = false;
 }
 
-void JsonTupleReader::SimpleReader::reset(rapidjson::Value& v) {
+void JsonTupleReader::SimpleReader::reset(rapidjson::Value::ValueIterator v) {
 	val = v;
 	nexted = false;
 }
@@ -179,7 +180,7 @@ JsonTupleReader::JsonTupleReader(const std::string& filename, schema::GroupEleme
 	reader = new RepeatedReader(constructReader(root, schema_columns));
 	document.Parse<0>(::parquetbase::util::readFile(filename).c_str());
 	if (!document.IsArray()) throw Exception("JSON data is not an array");
-	reader->reset(document);
+	reader->reset(&document);
 }
 
 
@@ -198,20 +199,5 @@ uint32_t JsonTupleReader::getValueSize(uint8_t column) {
 	return valuesizes[column];
 }
 
-
-/*
-std::vector<ParquetTupleReader*> ParquetTupleReader::readers{};
-
-
-ParquetTupleReader* ParquetTupleReader::reader(uint8_t index) {
-	return readers[index];
-}
-
-
-uint8_t ParquetTupleReader::putReader(ParquetTupleReader* reader) {
-	readers.push_back(reader);
-	return readers.size()-1;
-}
-*/
 
 }}

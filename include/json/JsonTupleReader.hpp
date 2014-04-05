@@ -19,13 +19,13 @@ protected:
 	public:
 		//virtual ~Reader() = 0;
 		virtual bool next() = 0;
-		virtual void reset(rapidjson::Value& val) = 0;
+		virtual void reset(rapidjson::Value::ValueIterator val) = 0;
 		virtual void reset() = 0;
 	};
 
 	class SimpleReader : public Reader {
 	protected:
-		rapidjson::Value val;
+		rapidjson::Value::ValueIterator val;
 		bool nexted = false;
 		schema::RepetitionType repetition;
 		JsonTupleReader* jsonreader;
@@ -34,20 +34,20 @@ protected:
 	public:
 		virtual ~SimpleReader() {};
 		virtual bool next();
-		virtual void reset(rapidjson::Value& val);
+		virtual void reset(rapidjson::Value::ValueIterator val);
 		virtual void reset();
 		SimpleReader(JsonTupleReader* jsonreader, uint slot, schema::RepetitionType repetition, std::string name);
 	};
 
 	class RepeatedReader : public Reader {
 	protected:
-		rapidjson::Value val;
+		rapidjson::Value::ValueIterator val;
 		rapidjson::Value::ValueIterator it;
 		Reader* reader;
 	public:
 		virtual ~RepeatedReader() {};
 		virtual bool next();
-		virtual void reset(rapidjson::Value& v);
+		virtual void reset(rapidjson::Value::ValueIterator v);
 		virtual void reset();
 		RepeatedReader(Reader* reader) : val(), it(), reader(reader) {}
 	};
@@ -58,7 +58,7 @@ protected:
 		std::map<std::string, Reader*> readers;
 		virtual ~GroupReader() {};
 		virtual bool next();
-		virtual void reset(rapidjson::Value& val);
+		virtual void reset(rapidjson::Value::ValueIterator val);
 		virtual void reset();
 		GroupReader();
 	};

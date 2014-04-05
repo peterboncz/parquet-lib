@@ -1,0 +1,10 @@
+message nesteddoublerepetition {
+  required int64 myid;
+  repeated group g1 {
+    required int64 field1;
+  }
+  repeated group g2 {
+    required int64 field2;
+  }
+}
+
