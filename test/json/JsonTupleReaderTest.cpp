@@ -94,6 +94,28 @@ TEST(JsonTupleReaderTest, NestedSchema) {
 }
 
 
+TEST(JsonTupleReaderTest, NestedSchemaRepetition) {
+	SchemaParser parser{"testdata/schema/nested.schema"};
+	GroupElement* root = parser.parseSchema();
+	std::vector<SimpleElement*> columns;
+	for (auto* el : dynamic_cast<GroupElement*>(root->elements[1])->elements) {
+			columns.push_back(dynamic_cast<SimpleElement*>(el));
+	}
+	JsonTupleReader reader{"testdata/json/nested-required-repetition.json", root, columns, true, true};
+	ASSERT_EQ(4, reader.numColumns());
+	uint32_t id = 1;
+	for (uint64_t i=1; i <= 3; i++) {
+		for (uint64_t j=1; j <=3; j++) {
+			ASSERT_TRUE(reader.next());
+			ASSERT_EQ(j, reader.getValue<uint64_t>(0));
+			ASSERT_EQ(101, reader.getValue<uint64_t>(1));
+			ASSERT_EQ(id++, reader.getValue<uint32_t>(2)); // id
+			ASSERT_EQ(i, reader.getValue<uint32_t>(3)); // fk
+		}
+	}
+}
+
+
 TEST(JsonTupleReaderTest, NestedDoubleRepetitionSchema) {
 	SchemaParser parser{"testdata/schema/nested-doublerepetition.schema"};
 	GroupElement* root = parser.parseSchema();

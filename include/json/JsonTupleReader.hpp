@@ -17,7 +17,8 @@ class JsonTupleReader : public TupleReader {
 protected:
 	class Reader {
 	public:
-		//virtual ~Reader() = 0;
+		bool fk = false;
+		JsonTupleReader* jsonreader = nullptr;
 		virtual bool next() = 0;
 		virtual void reset(rapidjson::Value::ValueIterator val) = 0;
 		virtual void reset() = 0;
@@ -28,7 +29,6 @@ protected:
 		rapidjson::Value::ValueIterator val;
 		bool nexted = false;
 		schema::RepetitionType repetition;
-		JsonTupleReader* jsonreader;
 		uint slot;
 		std::string name;
 	public:
@@ -49,7 +49,7 @@ protected:
 		virtual bool next();
 		virtual void reset(rapidjson::Value::ValueIterator v);
 		virtual void reset();
-		RepeatedReader(Reader* reader) : val(), it(), reader(reader) {}
+		RepeatedReader(Reader* reader);
 	};
 
 	class GroupReader : public Reader {
@@ -70,9 +70,9 @@ protected:
 	std::vector<uint8_t*> values;
 	std::vector<uint32_t> valuesizes;
 	std::vector<bool> nulls;
-	//bool virtual_ids, virtual_fks;
-	//uint32_t* id_ptr = nullptr;
-	//uint32_t* fk_ptr = nullptr;
+	bool virtualids, virtualfks;
+	uint32_t* id_ptr = nullptr;
+	uint32_t* fk_ptr = nullptr;
 
 public:
 	JsonTupleReader(const std::string& filename, schema::GroupElement* root, std::vector<schema::SimpleElement*>& schema_columns, bool virtualids=false, bool virtualfks=false);

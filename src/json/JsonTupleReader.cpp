@@ -7,6 +7,10 @@
 namespace parquetbase {
 namespace json {
 
+JsonTupleReader::RepeatedReader::RepeatedReader(Reader* reader) : val(), it(), reader(reader) {
+	if (reader->jsonreader) jsonreader = reader->jsonreader;
+	if (reader->fk) fk = reader->fk;
+}
 
 bool JsonTupleReader::RepeatedReader::next() {
 	if (!reader->next()) {
@@ -40,6 +44,8 @@ JsonTupleReader::GroupReader::GroupReader() {
 bool JsonTupleReader::GroupReader::next() {
 	auto back = repeated.back();
 	if (!back->next()) {
+		if (back->fk)
+			(*(back->jsonreader->fk_ptr))++;
 		int index = repeated.size()-2;
 		while(index >= 0) {
 			if (!repeated[index]->next())
@@ -115,7 +121,9 @@ void JsonTupleReader::SimpleReader::reset(rapidjson::Value::ValueIterator v) {
 }
 
 JsonTupleReader::SimpleReader::SimpleReader(JsonTupleReader* jsonreader, uint slot, schema::RepetitionType repetition, std::string name)
-	: jsonreader(jsonreader), slot(slot), val(), nexted(false), repetition(repetition), name(name) {}
+		: slot(slot), val(), nexted(false), repetition(repetition), name(name) {
+	this->jsonreader = jsonreader;
+}
 
 
 int findElement(std::vector<schema::SimpleElement*>& vec, schema::SimpleElement* element) {
@@ -151,6 +159,10 @@ JsonTupleReader::Reader* JsonTupleReader::constructReader(schema::GroupElement* 
 					r = new SimpleReader(this, uint(index), sel->repetition, sel->name);
 				}
 			}
+			if (r != nullptr && virtualfks) {
+				group->fk = true;
+				group->jsonreader = this;
+			}
 		} else {
 			r = constructReader(dynamic_cast<schema::GroupElement*>(el), schema_columns);
 		}
@@ -171,13 +183,27 @@ JsonTupleReader::Reader* JsonTupleReader::constructReader(schema::GroupElement* 
 
 
 /// empty schema_columns means use all columns (depth-first-search)
+/// virtualfk only works if all requested columns are in same group
 JsonTupleReader::JsonTupleReader(const std::string& filename, schema::GroupElement* root, std::vector<schema::SimpleElement*>& schema_columns, bool virtualids, bool virtualfks)
-		: document() {
-	if (virtualids || virtualfks) throw Exception("virtualids and virtualfks not implemented in JsonTupleReader");
+		: document(), virtualids(virtualids), virtualfks(virtualfks) {
 	values.resize(schema_columns.size());
 	valuesizes.resize(schema_columns.size());
 	nulls.resize(schema_columns.size());
 	reader = new RepeatedReader(constructReader(root, schema_columns));
+	if (virtualids) {
+		id_ptr = new uint32_t;
+		values.push_back(reinterpret_cast<uint8_t*>(id_ptr));
+		valuesizes.push_back(4);
+		nulls.push_back(false);
+		*id_ptr = 0;
+	}
+	if (virtualfks) {
+		fk_ptr = new uint32_t;
+		values.push_back(reinterpret_cast<uint8_t*>(fk_ptr));
+		valuesizes.push_back(4);
+		nulls.push_back(false);
+		*fk_ptr = 1;
+	}
 	document.Parse<0>(::parquetbase::util::readFile(filename).c_str());
 	if (!document.IsArray()) throw Exception("JSON data is not an array");
 	reader->reset(&document);
@@ -185,6 +211,8 @@ JsonTupleReader::JsonTupleReader(const std::string& filename, schema::GroupEleme
 
 
 bool JsonTupleReader::next() {
+	if (virtualids)
+		++(*id_ptr);
 	return reader->next();
 }
 
