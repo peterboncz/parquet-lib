@@ -26,7 +26,7 @@ LexerToken SchemaLexer::nextToken() {
 			value = "";
 			while (position < length) {
 				c = input[position];
-				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
 					value += c;
 					++position;
 				} else {
@@ -42,6 +42,7 @@ LexerToken SchemaLexer::nextToken() {
 						else if (value == "int96") return LexerToken::INT96;
 						else if (value == "float") return LexerToken::FLOAT;
 						else if (value == "double") return LexerToken::DOUBLE;
+						else if (value == "binary") return LexerToken::BINARY;
 						else if (value == "string") return LexerToken::STRING;
 						else if (value == "boolean") return LexerToken::BOOLEAN;
 						else return LexerToken::IDENTIFIER;

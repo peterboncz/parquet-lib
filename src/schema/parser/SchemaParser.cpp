@@ -37,6 +37,7 @@ void SchemaParser::parseGroup(GroupElement* group) {
 			case LexerToken::FLOAT: type = ColumnType::FLOAT; break;
 			case LexerToken::DOUBLE: type = ColumnType::DOUBLE; break;
 			case LexerToken::BOOLEAN: type = ColumnType::BOOLEAN; break;
+			case LexerToken::BINARY: type = ColumnType::BYTE_ARRAY; break;
 			case LexerToken::STRING: type = ColumnType::BYTE_ARRAY; break;
 			case LexerToken::GROUP: {
 				if (lexer.nextToken() != LexerToken::IDENTIFIER) throw Exception("Invalid syntax: Expected identifier");

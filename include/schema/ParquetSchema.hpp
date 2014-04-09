@@ -79,7 +79,7 @@ inline uint32_t size(ColumnType type) {
 
 class Element {
 public:
-	const std::string name;
+	std::string name;
 	const RepetitionType repetition;
 	Element* parent;
 	uint8_t r_level, d_level;

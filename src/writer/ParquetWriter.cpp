@@ -24,7 +24,7 @@ void ParquetWriter::initColumns(schema::GroupElement* schemaelement) {
 			initColumns(dynamic_cast<schema::GroupElement*>(el));
 		else {
 			schema::SimpleElement* s = dynamic_cast<schema::SimpleElement*>(el);
-			uint8_t* ptr = new uint8_t[1000];
+			uint8_t* ptr = new uint8_t[1000]; // TODO
 			columns.insert({s, PtrPair(ptr, ptr)});
 			r_levels.insert({s, std::vector<uint8_t>()});
 			d_levels.insert({s, std::vector<uint8_t>()});

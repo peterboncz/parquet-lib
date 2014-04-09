@@ -1,0 +1,7 @@
+message schema {
+  optional int32 n_nationkey;
+  optional binary n_name;
+  optional int32 n_regionkey;
+  optional binary n_comment;
+}
+

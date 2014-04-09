@@ -1,0 +1,16 @@
+message hive_schema {
+  optional int32 id;
+  optional binary str;
+  optional group mp {
+    repeated group map {
+      required binary key;
+      optional binary value;
+    }
+  }
+  optional group lst {
+    repeated group bag {
+      optional binary array_element;
+    }
+  }
+}
+
