@@ -79,6 +79,15 @@ ParquetRowGroup ParquetFile::rowgroup(uint32_t num) {
 	return std::move(rg);
 }
 
+std::unordered_map<std::string, ParquetFile*> ParquetFile::files{};
+
+ParquetFile* ParquetFile::file(const std::string& filename) {
+	auto it = files.find(filename);
+	if (it != files.end()) return it->second;
+	ParquetFile* file = new ParquetFile(filename);
+	files[filename] = file;
+	return file;
+}
 
 }
 

@@ -31,6 +31,10 @@ ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<schema::Si
 }
 
 
+ParquetTupleReader::ParquetTupleReader(const std::string& filename, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids, bool virtual_fks)
+	: ParquetTupleReader(ParquetFile::file(filename), schema_columns, virtual_ids, virtual_fks) {}
+
+
 void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 	schema::Element* schema_parent = nullptr;
 	for (auto& col : pcolumns) {

@@ -26,6 +26,7 @@ protected:
 	void init(std::vector<ParquetColumn> pcolumns);
 public:
 	ParquetTupleReader(ParquetFile* file, std::vector<std::string> column_names, bool virtual_ids=false, bool virtual_fks=false);
+	ParquetTupleReader(const std::string& filename, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids=false, bool virtual_fks=false);
 	ParquetTupleReader(ParquetFile* file, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids=false, bool virtual_fks=false);
 	bool next();
 	uint8_t* getValuePtr(uint8_t column);

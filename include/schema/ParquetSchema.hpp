@@ -93,9 +93,11 @@ public:
 		r_level = r; d_level = d;
 	}
 
-	std::string full_name(const std::string& separator=std::string(".")) {
-		if(parent == nullptr) return name;
-		else return parent->full_name(separator)+separator+name;
+	std::string full_name(const std::string& separator=std::string("."), const std::string& rootname=std::string("")) {
+		if(parent == nullptr) {
+			if (rootname=="") return name;
+			else return rootname;
+		} else return parent->full_name(separator)+separator+name;
 	}
 
 	void path(std::vector<std::string>& pathvector) {

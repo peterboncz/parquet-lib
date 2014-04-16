@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <unordered_map>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "parquet_constants.h"
@@ -40,6 +41,8 @@ public:
 	uint32_t numberOfRowgroups();// { return filemetadata->row_groups.size(); }
 	ParquetRowGroup rowgroup(uint32_t num);
 
+	static ParquetFile* file(const std::string& filename);
+	static std::unordered_map<std::string, ParquetFile*> files;
 
 
 };

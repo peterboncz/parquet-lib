@@ -159,4 +159,12 @@ TEST_F(ParquetWriterTest, NestedOptionalNull) {
 	w.put("testdata/json/nested-optional-repetition.json");
 	w.write();
 }
+
+TEST_F(ParquetWriterTest, WriteTool) {
+	SchemaParser parser("testdata/schema/nested.schema");
+	GroupElement* schema = parser.parseSchema();
+	ParquetWriter w(schema, "testdata/nested-required-norepetition.parquet");
+	w.put("testdata/json/nested-required-norepetition.json");
+	w.write();
+}
 */
