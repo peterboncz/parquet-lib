@@ -74,3 +74,20 @@ TEST(ParquetTupleReaderTest, NestedSchemaVirtualFks) {
 	}
 	ASSERT_FALSE(reader.next());
 }
+
+
+TEST(ParquetTupleReaderTest, RecursiveFks) {
+	ParquetFile file(std::string("testdata/doublenested.parquet"));
+	ParquetTupleReader reader{&file, {string("Links.Refs.ref"),}, false, true, true};
+	for (uint i=1; i<=4; i++) {
+		for (uint j=(i-1)*2+1; j<=i*2; j++) {
+			for (uint l=1; l<=2; l++) {
+				ASSERT_TRUE(reader.next());
+				ASSERT_EQ(l, reader.getValue<uint64_t>(0)); // Links.Refs.ref
+				ASSERT_EQ(j, reader.getValue<uint32_t>(1)); // fk Links
+				ASSERT_EQ(i, reader.getValue<uint32_t>(2)); // fk root
+			}
+		}
+	}
+	ASSERT_FALSE(reader.next());
+}

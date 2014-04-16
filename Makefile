@@ -9,7 +9,7 @@ bin_dir := bin/
 build_dir = @mkdir -p $(dir $@)
 
 
-all: bin/tester
+all: bin/tester bin/json2parquet
 
 clean:
 	$(RM) -rf bin/*
@@ -25,6 +25,9 @@ bin/libparquet.a: $(src_files) bin/parquet_constants.o bin/parquet_types.o
 
 bin/tester: $(test_files) bin/libparquet.a libs/gtest/libgtest.a
 	$(CXX) $(OPT) -o bin/tester $(test_files) bin/libparquet.a libs/gtest/libgtest.a $(CPPFLAGS) $(LDFLAGS)
+	
+bin/json2parquet: bin/libparquet.a tools/json2parquet.cpp
+	$(CXX) $(OPT) -o bin/json2parquet tools/json2parquet.cpp bin/libparquet.a $(CPPFLAGS) $(LDFLAGS)
 
 $(test_files): libs/gtest/include/gtest/gtest.h
 

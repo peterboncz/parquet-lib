@@ -1,0 +1,10 @@
+message doublenested {
+  required int64 myid;
+  repeated group Links {
+    required int64 linkid;
+    repeated group Refs {
+      required int64 ref;
+    }
+  }
+}
+

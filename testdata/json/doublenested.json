@@ -1,0 +1,6 @@
+[
+{"myid": 1, "Links": [{"linkid": 1, "Refs": [{"ref": 1}, {"ref": 2}]}, {"linkid": 2, "Refs": [{"ref": 1}, {"ref": 2}]}]},
+{"myid": 2, "Links": [{"linkid": 1, "Refs": [{"ref": 1}, {"ref": 2}]}, {"linkid": 2, "Refs": [{"ref": 1}, {"ref": 2}]}]},
+{"myid": 3, "Links": [{"linkid": 1, "Refs": [{"ref": 1}, {"ref": 2}]}, {"linkid": 2, "Refs": [{"ref": 1}, {"ref": 2}]}]},
+{"myid": 4, "Links": [{"linkid": 1, "Refs": [{"ref": 1}, {"ref": 2}]}, {"linkid": 2, "Refs": [{"ref": 1}, {"ref": 2}]}]}
+]

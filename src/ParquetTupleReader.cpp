@@ -7,8 +7,8 @@
 namespace parquetbase {
 
 
-ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<std::string> column_names, bool virtual_ids, bool virtual_fks)
-		: file(file), column_names(column_names), columns(), virtual_ids(virtual_ids), virtual_fks(virtual_fks) {
+ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<std::string> column_names, bool virtual_ids, bool virtual_fks, bool recursivefks)
+		: file(file), column_names(column_names), columns(), virtual_ids(virtual_ids), virtual_fks(virtual_fks), recursivefks(recursivefks) {
 	ParquetRowGroup rowgroup = file->rowgroup(0);
 	std::vector<ParquetColumn> pcolumns;
 	for (std::string& col_name : column_names) {
@@ -19,8 +19,8 @@ ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<std::strin
 }
 
 
-ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids, bool virtual_fks)
-		: file(file), columns(), virtual_ids(virtual_ids), virtual_fks(virtual_fks) {
+ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids, bool virtual_fks, bool recursivefks)
+		: file(file), columns(), virtual_ids(virtual_ids), virtual_fks(virtual_fks), recursivefks(recursivefks) {
 	ParquetRowGroup rowgroup = file->rowgroup(0);
 	std::vector<ParquetColumn> pcolumns;
 	for (auto* scol : schema_columns) {
@@ -31,8 +31,8 @@ ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<schema::Si
 }
 
 
-ParquetTupleReader::ParquetTupleReader(const std::string& filename, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids, bool virtual_fks)
-	: ParquetTupleReader(ParquetFile::file(filename), schema_columns, virtual_ids, virtual_fks) {}
+ParquetTupleReader::ParquetTupleReader(const std::string& filename, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids, bool virtual_fks, bool recursivefks)
+	: ParquetTupleReader(ParquetFile::file(filename), schema_columns, virtual_ids, virtual_fks, recursivefks) {}
 
 
 void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
@@ -40,6 +40,7 @@ void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 	for (auto& col : pcolumns) {
 		if (schema_parent == nullptr) schema_parent = col.getSchema()->parent;
 		if (schema_parent != col.getSchema()->parent) throw Exception("columns are not in one group");
+		max_r_level = col.getSchema()->r_level;
 		values.push_back(nullptr);
 		valuesizes.push_back(0);
 		schemas.push_back(col.getSchema());
@@ -53,11 +54,16 @@ void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 		valuesizes.push_back(4);
 		*id_ptr = 0;
 	}
-	if (virtual_fks) {
-		fk_ptr = new uint32_t;
-		values.push_back(reinterpret_cast<uint8_t*>(fk_ptr));
+	uint8_t tmp;
+	if (!recursivefks && virtual_fks) tmp = 1;
+	else if (recursivefks) tmp = max_r_level;
+	else tmp = 0;
+	for (uint8_t i=0; i < tmp; i++) {
+		uint32_t* ptr = new uint32_t;
+		fk_ptrs.push_back(ptr);
+		values.push_back(reinterpret_cast<uint8_t*>(ptr));
 		valuesizes.push_back(4);
-		*fk_ptr = 0;
+		*ptr = 0;
 	}
 }
 
@@ -72,10 +78,11 @@ bool ParquetTupleReader::next() {
 	bool new_parent_record = true;
 	bool all_null = true;
 	uint slot = 0;
+	uint8_t r_level = 0;
 	for (auto& col : columns) {
 		bool res = col.nextValue(r, d, ptr);
 		if (!res) return false;
-		if (r == mlevel_it->first) new_parent_record = false;
+		r_level = r;
 		if (ptr != nullptr) all_null = false;
 		*level_it = Levels(r, d);
 		*values_it = ptr;
@@ -84,7 +91,14 @@ bool ParquetTupleReader::next() {
 	}
 	if (virtual_ids && !all_null)
 		++(*id_ptr);
-	if (virtual_fks && new_parent_record) ++(*fk_ptr);
+	if (r_level < max_r_level) {
+		if (virtual_fks && !recursivefks)
+			++(*(fk_ptrs.front()));
+		else if (recursivefks) {
+			for (uint8_t i=0; i < max_r_level-r_level; i++)
+				++(*(fk_ptrs[i]));
+		}
+	}
 	return true;
 }
 
