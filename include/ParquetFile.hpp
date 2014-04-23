@@ -29,9 +29,6 @@ protected:
 
 	schema::thrift::FileMetaData* filemetadata;
 
-	schema::Element* readSchema();
-	schema::Element* readSchemaElement(ThriftSchema::const_iterator& it, schema::Element* parent);
-
 public:
 	uint8_t* file_mem;
 	ParquetFile(const std::string& filename);

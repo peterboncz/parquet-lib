@@ -22,7 +22,7 @@ ParquetFile::ParquetFile(const std::string& filename) : filename(filename) {
 	uint64_t footersize = *reinterpret_cast<uint32_t*>(file_mem+file_size-8);
     uint8_t* buf = file_mem + (file_size-8-footersize);
     filemetadata = util::thrift_deserialize<schema::thrift::FileMetaData>(buf, footersize);
-	schema = readSchema();
+	schema = schema::generateSchema(filemetadata->schema);
 }
 
 
@@ -31,36 +31,6 @@ ParquetFile::~ParquetFile() {
 	fclose(file_handle);
 	delete schema;
 	delete filemetadata;
-}
-
-
-schema::Element* ParquetFile::readSchemaElement(ThriftSchema::const_iterator& it, schema::Element* parent) {
-	ThriftElement el = *it;
-	uint8_t d_level, r_level;
-	if (parent == nullptr) {d_level = 0; r_level = 0;
-	} else { d_level = parent->d_level; r_level = parent->r_level; }
-	schema::RepetitionType rtype = schema::map(el.repetition_type);
-	switch (rtype) {
-	case schema::RepetitionType::REQUIRED: break;
-	case schema::RepetitionType::OPTIONAL: d_level++; break;
-	case schema::RepetitionType::REPEATED: d_level++; r_level++; break;
-	}
-	if (el.num_children > 0) {
-		schema::GroupElement* cur = new schema::GroupElement(el.name, rtype, parent, r_level, d_level);
-		for (int i=0; i < el.num_children; i++) {
-			cur->elements.push_back(readSchemaElement(++it, cur));
-		}
-		return cur;
-	} else
-		return new schema::SimpleElement(el.name, schema::map(el.type), el.type_length, rtype, parent, r_level, d_level);
-}
-
-
-schema::Element* ParquetFile::readSchema() {
-	ThriftSchema schema = filemetadata->schema;
-	ThriftSchema::const_iterator it = schema.cbegin();
-	schema::Element* s = readSchemaElement(it, nullptr);
-	return s;
 }
 
 
@@ -79,7 +49,9 @@ ParquetRowGroup ParquetFile::rowgroup(uint32_t num) {
 	return std::move(rg);
 }
 
+
 std::unordered_map<std::string, ParquetFile*> ParquetFile::files{};
+
 
 ParquetFile* ParquetFile::file(const std::string& filename) {
 	auto it = files.find(filename);
@@ -89,5 +61,5 @@ ParquetFile* ParquetFile::file(const std::string& filename) {
 	return file;
 }
 
-}
 
+}

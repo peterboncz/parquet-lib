@@ -118,36 +118,6 @@ void ParquetWriter::putMessage(StringVector path, const rapidjson::Value& object
 }
 
 
-typedef schema::thrift::SchemaElement ThriftSchema;
-typedef std::vector<schema::thrift::SchemaElement> SchemaVector;
-
-void generateSchemaInner(SchemaVector& schemavec, schema::GroupElement* schema, bool root=false) {
-	ThriftSchema s;
-	s.__set_name(schema->name);
-	s.__set_num_children(schema->elements.size());
-	if (!root) s.__set_repetition_type(schema::thrift::FieldRepetitionType::REPEATED);
-	schemavec.push_back(s);
-	for (auto* el : schema->elements) {
-		if (dynamic_cast<schema::GroupElement*>(el) != nullptr) {
-			generateSchemaInner(schemavec, dynamic_cast<schema::GroupElement*>(el));
-		} else {
-			schema::SimpleElement* sel = dynamic_cast<schema::SimpleElement*>(el);
-			ThriftSchema s;
-			s.__set_name(sel->name);
-			s.__set_repetition_type(schema::unmap(sel->repetition));
-			s.__set_type(schema::unmap(sel->type));
-			schemavec.push_back(s);
-		}
-	}
-}
-
-SchemaVector generateSchema(schema::GroupElement* schema) {
-	SchemaVector schemavec;
-	generateSchemaInner(schemavec, schema, true);
-	return schemavec;
-}
-
-
 uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, const std::vector<uint8_t>& r_levels, const std::vector<uint8_t>& d_levels) {
 	uint64_t rsize = 0;
 	bool omit_r_levels = false;
@@ -198,7 +168,7 @@ void ParquetWriter::write() {
 	filemeta->__set_num_rows(num_rows);
 	filemeta->__set_version(3);
 	filemeta->__set_created_by(std::string("parquetbaselib"));
-	filemeta->__set_schema(generateSchema(schema));
+	filemeta->__set_schema(schema::generateThriftSchema(schema));
 	schema::thrift::RowGroup rg;
 	rg.__set_num_rows(num_rows);
 	std::vector<schema::thrift::ColumnChunk> colchunks;

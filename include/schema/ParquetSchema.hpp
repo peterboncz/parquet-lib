@@ -7,6 +7,8 @@
 namespace parquetbase {
 namespace schema {
 
+typedef std::vector<thrift::SchemaElement> ThriftSchema;
+typedef thrift::SchemaElement ThriftSchemaElement;
 
 enum class RepetitionType : std::uint8_t { REQUIRED = 0, OPTIONAL = 1, REPEATED = 2 };
 
@@ -148,6 +150,12 @@ public:
 };
 
 
+/// Take a schema in thrift format and generate an Element-Hierarchy
+Element* generateSchema(ThriftSchema& schema);
+
+
+/// Reverse process and generate schema in thrift format for storage
+ThriftSchema generateThriftSchema(GroupElement* schema);
 
 
 }}
