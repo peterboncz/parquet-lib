@@ -25,6 +25,9 @@ public:
 	uint8_t* nextValue(uint8_t& r, uint8_t& d);
 	uint32_t getValueSize();
 
+	bool nextValue(uint8_t*& ptr);
+	void nextLevels(uint8_t& r, uint8_t& d);
+
 	schema::SimpleElement* getSchema() { return schema; }
 };
 

@@ -13,6 +13,7 @@ ParquetColumn::ParquetColumn(uint8_t* mem, schema::thrift::ColumnMetaData metada
 		// format guarantees that only one dictionary page exists
 		uint64_t dictheader_size = metadata.total_uncompressed_size;
 		auto* dictpageheader = util::thrift_deserialize<schema::thrift::PageHeader>(dict_mem, dictheader_size);
+		mem_end -= (dictpageheader->compressed_page_size + dictheader_size);
 		uint8_t* memptr = util::decompress(dict_mem+dictheader_size, dictpageheader->compressed_page_size, dictpageheader->uncompressed_page_size, metadata.codec);
 		assert(memptr != nullptr);
 		dict_page = new ParquetDictionaryPage(memptr, dictpageheader->uncompressed_page_size, dictpageheader->dictionary_page_header.num_values, schema);
@@ -42,15 +43,40 @@ bool ParquetColumn::nextValue(uint8_t& r, uint8_t& d, uint8_t*& ptr) {
 		nextPage();
 		if (cur_page == nullptr) return false;
 	}
-	ptr = cur_page->nextValue(r, d);
+	cur_page->nextLevels(r, d);
+	ptr = cur_page->nextValue();
+	//ptr = cur_page->nextValue(r, d);
 	return true;
 }
+
 
 uint8_t* ParquetColumn::nextValue(uint8_t& r, uint8_t& d) {
 	uint8_t* ptr;
 	if (!nextValue(r, d, ptr)) return nullptr;
 	return ptr;
 }
+
+
+bool ParquetColumn::nextValue(uint8_t*& ptr) {
+	if (cur_page == nullptr) return false;
+	if (cur_page->values_left() == 0) {
+		nextPage();
+		if (cur_page == nullptr) return false;
+	}
+	ptr = cur_page->nextValue();
+	return true;
+}
+
+
+void ParquetColumn::nextLevels(uint8_t& r, uint8_t& d) {
+	if (cur_page == nullptr) return;
+	if (cur_page->values_left() == 0) {
+		nextPage();
+		if (cur_page == nullptr) return;
+	}
+	cur_page->nextLevels(r, d);
+}
+
 
 uint32_t ParquetColumn::getValueSize() {
 	if (cur_page == nullptr) return 0;

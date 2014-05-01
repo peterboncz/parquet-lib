@@ -36,7 +36,7 @@ uint8_t* ParquetDictionaryPage::getValue(uint32_t i) {
 uint32_t ParquetDictionaryPage::getValueSize(uint32_t i) {
 	if (fixedvaluesize) return value_size;
 	if (i >= num_values) throw Exception("invalid index: "+i);
-	else return sizeindex[i];
+	return sizeindex[i];
 }
 
 

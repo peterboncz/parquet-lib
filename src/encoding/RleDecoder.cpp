@@ -32,6 +32,10 @@ RleDecoder::RleDecoder(uint8_t* buffer, uint8_t* bufferend, uint8_t bitwidth) {
 }
 
 bool RleDecoder::get(uint8_t& val) {
+	if (peeked) {
+		peeked = false;
+		return cache;
+	}
 	if (literal_count == 0 && repeat_count == 0) {
 		if (bufferend == buffer) return false;
 		uint64_t count = parquetbase::util::vlq(buffer); // after vlq() buffer points to first data element
@@ -76,5 +80,15 @@ bool RleDecoder::get(uint8_t& val) {
 		return false;
 	}
 }
+
+
+uint8_t RleDecoder::peek() {
+	if (!peeked) {
+		get(cache);
+		peeked = true;
+	}
+	return cache;
+}
+
 
 }}

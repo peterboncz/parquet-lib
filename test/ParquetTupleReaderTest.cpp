@@ -91,3 +91,34 @@ TEST(ParquetTupleReaderTest, RecursiveFks) {
 	}
 	ASSERT_FALSE(reader.next());
 }
+
+
+TEST(ParquetTupleReaderTest, NonFlatColumns) {
+	ParquetFile file(std::string("testdata/nested-required-norepetition.parquet"));
+	ParquetTupleReader reader(&file, {string("myid"), string("Links.linkid"),string("Links.ref")}, true);
+	for (uint i=1; i<=4; i++) {
+		ASSERT_TRUE(reader.next());
+		ASSERT_EQ(i, reader.getValue<uint64_t>(0)); // myid
+		ASSERT_EQ(1, reader.getValue<uint64_t>(1)); // Links.linkid
+		ASSERT_EQ(101, reader.getValue<uint64_t>(2)); // Links.ref
+	}
+	ASSERT_FALSE(reader.next());
+}
+
+TEST(ParquetTupleReaderTest, NonFlatColumnsRepetition) {
+	ParquetFile file(std::string("testdata/nested-required-repetition.parquet"));
+	ParquetTupleReader reader(&file, {string("myid"), string("Links.linkid"),string("Links.ref")}, true);
+	for (uint i=1; i<=3; i++) {
+		for (uint j=1; j <= 3; j++) {
+			ASSERT_TRUE(reader.next());
+			ASSERT_EQ(i, reader.getValue<uint64_t>(0)); // myid
+			ASSERT_EQ(j, reader.getValue<uint64_t>(1)); // Links.linkid
+			ASSERT_EQ(101, reader.getValue<uint64_t>(2)); // Links.ref
+		}
+	}
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(4, reader.getValue<uint64_t>(0)); // myid
+	ASSERT_EQ(1, reader.getValue<uint64_t>(1)); // Links.linkid
+	ASSERT_EQ(101, reader.getValue<uint64_t>(2)); // Links.ref
+	ASSERT_FALSE(reader.next());
+}

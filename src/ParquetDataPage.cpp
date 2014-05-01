@@ -62,6 +62,26 @@ uint8_t* ParquetDataPage::nextValue(uint8_t& r, uint8_t& d) {
 	return data_decoder->nextValue();
 }
 
+
+uint8_t* ParquetDataPage::nextValue() {
+	if (num_values == 0) return nullptr;
+	num_values--;
+	if (cur_d != d_level) return nullptr;
+	return data_decoder->nextValue();
+}
+
+
+void ParquetDataPage::nextLevels(uint8_t& r, uint8_t& d) {
+	if (num_values == 0) return;
+	if (omit_r_levels) r = 0;
+	else r_decoder.get(r);
+	if (omit_d_levels) d = d_level;
+	else d_decoder.get(d);
+	cur_r = r;
+	cur_d = d;
+}
+
+
 uint32_t ParquetDataPage::getValueSize() {
 	return data_decoder->getValueSize();
 }
