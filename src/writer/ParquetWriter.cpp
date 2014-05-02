@@ -12,8 +12,8 @@ namespace parquetbase {
 namespace writer {
 
 
-ParquetWriter::ParquetWriter(schema::GroupElement* schema, std::string filename)
-		: filename(filename), schema(schema), columns(), r_levels(), d_levels() {
+ParquetWriter::ParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize)
+		: maximum_pagesize(pagesize), filename(filename), schema(schema), columns(), r_levels(), d_levels() {
 	initColumns(schema);
 }
 
@@ -24,7 +24,7 @@ void ParquetWriter::initColumns(schema::GroupElement* schemaelement) {
 			initColumns(dynamic_cast<schema::GroupElement*>(el));
 		else {
 			schema::SimpleElement* s = dynamic_cast<schema::SimpleElement*>(el);
-			uint8_t* ptr = new uint8_t[1000]; // TODO
+			uint8_t* ptr = new uint8_t[maximum_pagesize]; // TODO
 			columns.insert({s, PtrPair(ptr, ptr)});
 			r_levels.insert({s, std::vector<uint8_t>()});
 			d_levels.insert({s, std::vector<uint8_t>()});
@@ -39,6 +39,7 @@ void ParquetWriter::put(const rapidjson::Document& document) {
 		putMessage(StringVector(), *it, schema, 0, 0);
 	}
 }
+
 
 void ParquetWriter::put(const std::string& jsonfile) {
 	rapidjson::Document document;
@@ -67,17 +68,18 @@ void ParquetWriter::putMessage(StringVector path, const rapidjson::Value& object
 		} else { // SimpleElement
 			schema::SimpleElement* s = dynamic_cast<schema::SimpleElement*>(el);
 			auto& p = columns[s];
-			r_levels[s].push_back(r);
 			// TODO: check if value type corresponds to type in schema
 			switch(val.GetType()) {
 			case rapidjson::Type::kNumberType:
 				if (val.IsDouble()) {
+					changePageIf(s, sizeof(double));
 					*reinterpret_cast<double*>(p.second) = val.GetDouble();
 					p.second += sizeof(double);
 				/*} else if (val.IsUint64()) {
 					*reinterpret_cast<uint64_t*>(p.second) = val.GetUint64();
 					p.second += sizeof(uint64_t);*/
 				} else if (val.IsInt64()) {
+					changePageIf(s, sizeof(int64_t));
 					*reinterpret_cast<int64_t*>(p.second) = val.GetInt64();
 					p.second += sizeof(int64_t);
 				/*} else if (val.IsInt()) {
@@ -91,12 +93,14 @@ void ParquetWriter::putMessage(StringVector path, const rapidjson::Value& object
 				break;
 			case rapidjson::Type::kFalseType:
 			case rapidjson::Type::kTrueType:
+				changePageIf(s, sizeof(uint8_t));
 				*reinterpret_cast<uint8_t*>(p.second) = val.GetBool()?1:0;
 				p.second += sizeof(uint8_t);
 				break;
 			case rapidjson::Type::kStringType: {
 				const char* str = val.GetString();
 				const uint32_t strlength = val.GetStringLength();
+				changePageIf(s, strlength+4);
 				*reinterpret_cast<uint32_t*>(p.second) = strlength;
 				p.second += 4;
 				memcpy(p.second, str, strlength);
@@ -113,6 +117,7 @@ void ParquetWriter::putMessage(StringVector path, const rapidjson::Value& object
 				d_levels[s].push_back(d);
 			else
 				d_levels[s].push_back(s->d_level);
+			r_levels[s].push_back(r);
 		}
 	}
 }
@@ -158,12 +163,11 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	return datasize+rsize+dsize+headersize;
 }
 
+
 void ParquetWriter::write() {
-	std::vector<schema::thrift::Encoding::type> encodings;
-	encodings.push_back(schema::thrift::Encoding::PLAIN);
-	encodings.push_back(schema::thrift::Encoding::RLE);
+	std::vector<schema::thrift::Encoding::type> encodings = {schema::thrift::Encoding::PLAIN, schema::thrift::Encoding::RLE};
 	std::ofstream outfile(filename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-	outfile.write("PAR1", 4);
+	outfile.write("PAR1", 4); // magic number at beginning of file
 	schema::thrift::FileMetaData* filemeta = new schema::thrift::FileMetaData();
 	filemeta->__set_num_rows(num_rows);
 	filemeta->__set_version(3);
@@ -186,7 +190,18 @@ void ParquetWriter::write() {
 		if (pos == -1) throw Exception("Output error");
 		colmeta.__set_data_page_offset(pos);
 		colchunk.__set_file_offset(0); // ?
-		uint64_t pagesize = generatePage(outfile, col.second, col.first, r_levels[col.first], d_levels[col.first]);
+		auto page_it = finished_pages[col.first].begin();
+		auto rlevel_it = finished_r_levels[col.first].begin();
+		auto dlevel_it = finished_d_levels[col.first].begin();
+		auto page_end = finished_pages[col.first].end();
+		auto rlevel_end = finished_r_levels[col.first].end();
+		auto dlevel_end = finished_d_levels[col.first].end();
+		uint64_t pagesize = 0;
+		while (page_it != page_end) {
+			pagesize += generatePage(outfile, *page_it, col.first, *rlevel_it, *dlevel_it);
+			++page_it; ++rlevel_it; ++dlevel_it;
+		}
+		pagesize += generatePage(outfile, col.second, col.first, r_levels[col.first], d_levels[col.first]);
 		colmeta.__set_total_compressed_size(pagesize);
 		colmeta.__set_total_uncompressed_size(pagesize);
 		colchunk.__set_meta_data(colmeta);
@@ -203,6 +218,20 @@ void ParquetWriter::write() {
 	outfile.write(reinterpret_cast<char*>(&meta32), 4);
 	outfile.write("PAR1", 4);
 	outfile.close();
+}
+
+
+void ParquetWriter::changePageIf(schema::SimpleElement* column, uint64_t requested_size) {
+	auto& p = columns[column];
+	// check if new value fits onto current page, if not finish page and add new one
+	if (p.second - p.first <= maximum_pagesize - requested_size) return;
+	finished_pages[column].push_back({p.first, p.second});
+	p.first = new uint8_t[maximum_pagesize];
+	p.second = p.first;
+	finished_r_levels[column].push_back({});
+	finished_r_levels[column].back().swap(r_levels[column]);
+	finished_d_levels[column].push_back({});
+	finished_d_levels[column].back().swap(d_levels[column]);
 }
 
 
