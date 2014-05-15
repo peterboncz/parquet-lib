@@ -24,7 +24,7 @@ void ParquetWriter::initColumns(schema::GroupElement* schemaelement) {
 			initColumns(dynamic_cast<schema::GroupElement*>(el));
 		else {
 			schema::SimpleElement* s = dynamic_cast<schema::SimpleElement*>(el);
-			uint8_t* ptr = new uint8_t[maximum_pagesize]; // TODO
+			uint8_t* ptr = new uint8_t[maximum_pagesize];
 			columns.insert({s, PtrPair(ptr, ptr)});
 			r_levels.insert({s, std::vector<uint8_t>()});
 			d_levels.insert({s, std::vector<uint8_t>()});
@@ -55,23 +55,27 @@ void ParquetWriter::putMessage(StringVector path, const rapidjson::Value& object
 		if (!object.HasMember(el->name.c_str())) throw Exception("Missing member " + el->name);
 		const char* cstr = el->name.c_str();
 		const rapidjson::Value& val = object[cstr];
-
 		if (dynamic_cast<schema::GroupElement*>(el) != nullptr) {
-			if (!val.IsArray()) throw Exception("Expected array for " + el->name);
 			StringVector copy(path);
 			copy.push_back(el->name);
-			auto it = val.Begin();
-			putMessage(copy, *it, dynamic_cast<schema::GroupElement*>(el), r, d);
-			for (++it; it != val.End(); ++it) {
-				putMessage(copy, *it, dynamic_cast<schema::GroupElement*>(el), el->r_level, d);
-			}
+			if (val.IsArray()) {
+				auto it = val.Begin();
+				putMessage(copy, *it, dynamic_cast<schema::GroupElement*>(el), r, d);
+				for (++it; it != val.End(); ++it) {
+					putMessage(copy, *it, dynamic_cast<schema::GroupElement*>(el), el->r_level, d);
+				}
+			} else if (val.IsObject()) {
+				putMessage(copy, val, dynamic_cast<schema::GroupElement*>(el), r, d);
+			} else
+				throw Exception("Expected array for " + el->name);
 		} else { // SimpleElement
 			schema::SimpleElement* s = dynamic_cast<schema::SimpleElement*>(el);
 			auto& p = columns[s];
-			// TODO: check if value type corresponds to type in schema
 			switch(val.GetType()) {
 			case rapidjson::Type::kNumberType:
 				if (val.IsDouble()) {
+					if (s->type != schema::ColumnType::FLOAT && s->type != schema::ColumnType::DOUBLE)
+						throw Exception("Unexpected type of data in json");
 					changePageIf(s, sizeof(double));
 					*reinterpret_cast<double*>(p.second) = val.GetDouble();
 					p.second += sizeof(double);
@@ -79,6 +83,8 @@ void ParquetWriter::putMessage(StringVector path, const rapidjson::Value& object
 					*reinterpret_cast<uint64_t*>(p.second) = val.GetUint64();
 					p.second += sizeof(uint64_t);*/
 				} else if (val.IsInt64()) {
+					if (s->type != schema::ColumnType::INT64)
+						throw Exception("Unexpected type of data in json");
 					changePageIf(s, sizeof(int64_t));
 					*reinterpret_cast<int64_t*>(p.second) = val.GetInt64();
 					p.second += sizeof(int64_t);
@@ -93,11 +99,15 @@ void ParquetWriter::putMessage(StringVector path, const rapidjson::Value& object
 				break;
 			case rapidjson::Type::kFalseType:
 			case rapidjson::Type::kTrueType:
+				if (s->type != schema::ColumnType::BOOLEAN)
+					throw Exception("Unexpected type of data in json");
 				changePageIf(s, sizeof(uint8_t));
 				*reinterpret_cast<uint8_t*>(p.second) = val.GetBool()?1:0;
 				p.second += sizeof(uint8_t);
 				break;
 			case rapidjson::Type::kStringType: {
+				if (s->type != schema::ColumnType::BYTE_ARRAY && s->type != schema::ColumnType::FIXED_LEN_BYTE_ARRAY)
+					throw Exception("Unexpected type of data in json");
 				const char* str = val.GetString();
 				const uint32_t strlength = val.GetStringLength();
 				changePageIf(s, strlength+4);
@@ -160,6 +170,7 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	if (!omit_r_levels) out.write(reinterpret_cast<char*>(rmem), rsize);
 	if (!omit_d_levels) out.write(reinterpret_cast<char*>(dmem), dsize);
 	out.write(reinterpret_cast<char*>(ptrs.first), datasize);
+	delete[] ptrs.first;
 	return datasize+rsize+dsize+headersize;
 }
 
