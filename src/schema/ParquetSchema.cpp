@@ -1,4 +1,5 @@
 #include "schema/ParquetSchema.hpp"
+#include "util/StringUtil.hpp"
 
 namespace parquetbase {
 namespace schema {
@@ -59,6 +60,28 @@ ThriftSchema generateThriftSchema(GroupElement* schema) {
 	ThriftSchema schemavec;
 	generateThriftSchemaInner(schemavec, schema, true);
 	return schemavec;
+}
+
+
+Element* GroupElement::navigate(std::string basename, char separator) {
+	if (basename == "") return this;
+	std::vector<std::string> path = parquetbase::util::split(basename, separator);
+	auto it = path.begin();
+	auto end = path.end();
+	return navigate(it, end);
+}
+
+
+Element* GroupElement::navigate(std::vector<std::string>::iterator& it, std::vector<std::string>::iterator& end) {
+	std::string name = *it;
+	++it;
+	for (auto* el : elements) {
+		if (el->name == name) {
+			if (it == end) return el;
+			else return dynamic_cast<GroupElement*>(el)->navigate(it, end);
+		}
+	}
+	return nullptr;
 }
 
 

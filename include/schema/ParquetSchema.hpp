@@ -147,6 +147,9 @@ public:
 		return nullptr;
 	}
 
+	Element* navigate(std::string basename, char separator='.');
+	Element* navigate(std::vector<std::string>::iterator& it, std::vector<std::string>::iterator& end);
+
 };
 
 
