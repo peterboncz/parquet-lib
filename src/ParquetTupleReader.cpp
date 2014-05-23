@@ -118,6 +118,7 @@ bool ParquetTupleReader::next() {
 	auto col_it = columns.begin();
 	bool all_null = true;
 	uint8_t new_r_level = 0;
+	if (levels.empty()) return false;
 	for (auto& p : levels) {
 		if (p.first >= cur_r_level) {
 			if (!col_it->nextValue(ptr)) return false;
@@ -151,6 +152,14 @@ uint8_t* ParquetTupleReader::getValuePtr(uint8_t column) {
 
 uint32_t ParquetTupleReader::getValueSize(uint8_t column) {
 	return valuesizes[column];
+}
+
+
+schema::ColumnType ParquetTupleReader::getColumnType(uint8_t column) {
+	if (column < schemas.size())
+		return schemas[column]->type;
+	else
+		return schema::ColumnType::INT64;
 }
 
 

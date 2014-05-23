@@ -33,6 +33,23 @@ TEST(ParquetTupleReaderTest, NullInNested) {
 }
 
 
+TEST(ParquetTupleReaderTest, NullInNested2) {
+	ParquetFile file(std::string("testdata/nested-optional.parquet"));
+	ParquetTupleReader reader(&file, {string("Links.linkid"),string("Links.ref")});
+	for (uint i=1; i <= 3; i++) {
+		for (uint j=1; j<= 3; ++j) {
+			ASSERT_TRUE(reader.next());
+			ASSERT_EQ(j, reader.getValue<uint64_t>(0));
+			ASSERT_EQ(nullptr, reader.getValuePtr(1));
+		}
+	}
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(1, reader.getValue<uint64_t>(0));
+	ASSERT_EQ(101, reader.getValue<uint64_t>(1));
+	ASSERT_FALSE(reader.next());
+}
+
+
 TEST(ParquetTupleReaderTest, FlatSchemaVirtualIds) {
 	ParquetFile file(std::string("testdata/nation.impala.parquet"));
 	ParquetTupleReader reader(&file, {string("n_nationkey"),string("n_regionkey")}, true);

@@ -41,7 +41,7 @@ public:
 	uint32_t getValueSize(uint8_t column);
 	bool isFlatSchema() { return flat; }
 	uint numColumns() { return values.size(); }
-	schema::ColumnType getColumnType(uint8_t column) { return schemas[column]->type; }
+	schema::ColumnType getColumnType(uint8_t column);
 };
 
 

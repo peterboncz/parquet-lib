@@ -4,7 +4,8 @@
 typedef struct ParquetReader {
 	void* parquetfile;
 	void* reader;
-	int num_colummns;
+	int num_columns;
+	int vectorsize;
 } ParquetReader;
 
 
@@ -28,15 +29,17 @@ void* pl_getSchema(void* parquetfile, const char* schemapath);
 void* pl_getSchemaColumn(void* parquetfile, void* schema, const char* colname);
 
 
-ParquetReader* pl_createTupleReader(void* parquetfile, void** columns, int numcols, bool virtualids, bool virtualfks, bool recursivefks);
+ParquetReader* pl_createTupleReader(void* parquetfile, void** columns, int numcols, int vecsize, bool virtualids, bool virtualfks, bool recursivefks);
 
 int pl_readerNumColumns(void* parquetreader);
 
 
-ParquetType pl_getType(void* schemacol);
+ParquetType pl_column_getType(void* schemacol);
+
+const char* pl_column_getName(void* schemacol);
 
 
-bool pl_readTuples(void* parquetreader, void** vectors, long long* count);
+bool pl_readTuples(ParquetReader* parquetreader, void** vectors, long long* count);
 
 
 #ifdef __cplusplus
