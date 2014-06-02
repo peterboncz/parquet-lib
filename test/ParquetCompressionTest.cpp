@@ -10,6 +10,7 @@
 using namespace std;
 using namespace parquetbase;
 
+#ifdef ENABLE_COMPRESSION
 
 TEST(ParquetCompressionTest, GzipSimple) {
 	ParquetFile file(std::string("testdata/nation.impala.gzip.parquet"));
@@ -70,4 +71,6 @@ TEST(ParquetCompressionTest, SnappyByteArrayDictionaryEncodingColumn) {
 	ASSERT_EQ(9, col_id.getValueSize());
 	ASSERT_EQ(0, strncmp("ARGENTINA", reinterpret_cast<char*>(val), 9));
 }
+
+#endif
 

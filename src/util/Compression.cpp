@@ -1,7 +1,8 @@
 #include "util/Compression.hpp"
+#ifdef ENABLE_COMPRESSION
 #include "zlib.h"
 #include "snappy.h"
-
+#endif
 
 namespace parquetbase {
 namespace util {
@@ -10,6 +11,7 @@ namespace util {
 uint8_t* decompress(uint8_t* compressed_mem, uint64_t compressed_size, uint64_t uncompressed_size, CompressionCodec codec) {
 	if (codec == CompressionCodec::UNCOMPRESSED) {
 		return compressed_mem;
+#ifdef ENABLE_COMPRESSION
 	} else if (codec == CompressionCodec::GZIP) {
 		uint8_t* mem = new uint8_t[uncompressed_size];
 		uint64_t uncomp = uncompressed_size;
@@ -35,6 +37,7 @@ uint8_t* decompress(uint8_t* compressed_mem, uint64_t compressed_size, uint64_t 
 			return mem;
 		}
 		assert(false);
+		return nullptr;
 	} else if (codec == CompressionCodec::SNAPPY) {
 		uint8_t* mem = new uint8_t[uncompressed_size];
 		bool res = snappy::RawUncompress(reinterpret_cast<char*>(compressed_mem), compressed_size, reinterpret_cast<char*>(mem));
@@ -43,8 +46,11 @@ uint8_t* decompress(uint8_t* compressed_mem, uint64_t compressed_size, uint64_t 
 			delete[] mem;
 			return nullptr;
 		}
+#endif
+	} else {
+		assert(false);
+		return nullptr;
 	}
-	return nullptr;
 }
 
 
