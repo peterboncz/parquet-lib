@@ -9,7 +9,7 @@ using namespace parquetbase::schema;
 
 
 TEST(ParquetFileTest, FlatSchema) {
-	ParquetFile file(std::string("testdata/nation.impala.parquet"));
+	ParquetFile file(std::string("file://testdata/nation.impala.parquet"));
 	Element* schema = file.getSchema();
 	ASSERT_TRUE(schema != nullptr);
 	GroupElement* root = dynamic_cast<GroupElement*>(schema);

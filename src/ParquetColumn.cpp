@@ -1,19 +1,25 @@
 #include "ParquetColumn.hpp"
+#include "ParquetFile.hpp"
 #include "util/ThriftUtil.hpp"
 #include "util/Compression.hpp"
 
 #include <cassert>
 
+static const uint64_t INITIAL_HEADERSIZE = 512;
+
 namespace parquetbase {
 
-ParquetColumn::ParquetColumn(uint8_t* mem, schema::thrift::ColumnMetaData metadata, schema::SimpleElement* schema, uint8_t* dict_mem)
-		: mem(mem), metadata(metadata), schema(schema), dict_page(nullptr) {
-	mem_end = mem + metadata.total_compressed_size;
-	if (dict_mem != nullptr) {
+ParquetColumn::ParquetColumn(ParquetFile* parquetfile, uint64_t offset, schema::thrift::ColumnMetaData metadata, schema::SimpleElement* schema, uint64_t dict_offset)
+		: parquetfile(parquetfile), offset(offset), metadata(metadata), schema(schema), dict_page(nullptr) {
+	//mem_end = mem + metadata.total_compressed_size;
+	offset_end = metadata.total_compressed_size + offset;
+	if (dict_offset > 0) {
 		// format guarantees that only one dictionary page exists
-		uint64_t dictheader_size = metadata.total_uncompressed_size;
+		uint64_t dictheader_size = INITIAL_HEADERSIZE;
+		uint8_t* dict_mem = parquetfile->getMem(dict_offset, dictheader_size);
 		auto* dictpageheader = util::thrift_deserialize<schema::thrift::PageHeader>(dict_mem, dictheader_size);
-		mem_end -= (dictpageheader->compressed_page_size + dictheader_size);
+		offset_end -= (dictpageheader->compressed_page_size + dictheader_size);
+		dict_mem = parquetfile->getMem(dict_offset, dictpageheader->compressed_page_size, dict_mem, INITIAL_HEADERSIZE);
 		uint8_t* memptr = util::decompress(dict_mem+dictheader_size, dictpageheader->compressed_page_size, dictpageheader->uncompressed_page_size, metadata.codec);
 		assert(memptr != nullptr);
 		dict_page = new ParquetDictionaryPage(memptr, dictpageheader->uncompressed_page_size, dictpageheader->dictionary_page_header.num_values, schema);
@@ -23,17 +29,20 @@ ParquetColumn::ParquetColumn(uint8_t* mem, schema::thrift::ColumnMetaData metada
 
 
 void ParquetColumn::nextPage() {
-	if (mem == mem_end) {
+	if (offset >= offset_end) {
 		cur_page = nullptr;
 		return;
 	}
-	uint64_t header_size = mem_end-mem;
+	uint64_t header_size = INITIAL_HEADERSIZE;
+	uint8_t* mem = parquetfile->getMem(offset, header_size);
 	auto* pageheader = util::thrift_deserialize<schema::thrift::PageHeader>(mem, header_size);
 	assert(pageheader->type == schema::thrift::PageType::DATA_PAGE);
+	mem = parquetfile->getMem(offset, pageheader->compressed_page_size+header_size, mem, INITIAL_HEADERSIZE);
 	uint8_t* memptr = util::decompress(mem+header_size, pageheader->compressed_page_size, pageheader->uncompressed_page_size, metadata.codec);
 	assert(memptr != nullptr);
 	cur_page = new ParquetDataPage(memptr, pageheader->uncompressed_page_size, pageheader->data_page_header, schema, dict_page);
-	this->mem = mem + pageheader->compressed_page_size + header_size; // points to next page
+	offset += header_size + pageheader->compressed_page_size;
+	//this->mem = mem + pageheader->compressed_page_size + header_size; // points to next page
 }
 
 

@@ -6,9 +6,13 @@
 
 namespace parquetbase {
 
+class ParquetFile;
 
 class ParquetColumn {
 protected:
+	ParquetFile* parquetfile;
+	uint64_t offset;
+	uint64_t offset_end;
 	uint8_t* mem;
 	uint8_t* mem_end;
 	schema::thrift::ColumnMetaData metadata;
@@ -19,7 +23,7 @@ protected:
 	void nextPage();
 
 public:
-	ParquetColumn(uint8_t* mem, schema::thrift::ColumnMetaData metadata, schema::SimpleElement* schema, uint8_t* dict_mem);
+	ParquetColumn(ParquetFile* parquetfile, uint64_t offset, schema::thrift::ColumnMetaData metadata, schema::SimpleElement* schema, uint64_t dict_offset);
 
 	bool nextValue(uint8_t& r, uint8_t& d, uint8_t*& ptr);
 	uint8_t* nextValue(uint8_t& r, uint8_t& d);

@@ -9,6 +9,9 @@
 #include "schema/ParquetSchema.hpp"
 #include "ParquetRowGroup.hpp"
 #include "ParquetColumn.hpp"
+#ifdef ENABLE_HDFS
+#include "hdfs.h"
+#endif
 
 namespace parquetbase {
 
@@ -28,7 +31,13 @@ protected:
 	uint8_t level_maxvalue = 0;
 
 	schema::thrift::FileMetaData* filemetadata;
-
+#ifndef ENABLE_HDFS
+	static const bool isHdfsFile = false;
+#else
+	bool isHdfsFile = false;
+	hdfsFile hdfs_file_handle = nullptr;
+	hdfsFS fs = nullptr;
+#endif
 public:
 	uint8_t* file_mem;
 	ParquetFile(const std::string& filename);
@@ -41,6 +50,7 @@ public:
 	static ParquetFile* file(const std::string& filename);
 	static std::unordered_map<std::string, ParquetFile*> files;
 
+	uint8_t* getMem(uint64_t pos, uint64_t size, uint8_t* current=nullptr, uint64_t current_size=0);
 
 };
 

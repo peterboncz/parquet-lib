@@ -29,12 +29,11 @@ ParquetColumn ParquetRowGroup::column(schema::SimpleElement* element) {
 	element->path(path);
 	for (auto c : metadata.columns) {
 		if (path == c.meta_data.path_in_schema) {
-			uint8_t* mem = parquetfile->file_mem + c.meta_data.data_page_offset;
-			uint8_t* dict_mem = nullptr;
+			uint64_t dict_offset = 0;
 			if (c.meta_data.__isset.dictionary_page_offset) {
-				dict_mem = parquetfile->file_mem + c.meta_data.dictionary_page_offset;
+				dict_offset = c.meta_data.dictionary_page_offset;
 			}
-			ParquetColumn col(mem, c.meta_data, element, dict_mem);
+			ParquetColumn col(parquetfile, c.meta_data.data_page_offset, c.meta_data, element, dict_offset);
 			return std::move(col);
 		}
 	}
