@@ -25,8 +25,7 @@ std::vector<std::string> split(std::string work, char delim, int rep) {
         }
         i++;
     }
-    if (!buf.empty())
-        flds.push_back(buf);
+    flds.push_back(buf);
     return flds;
 }
 

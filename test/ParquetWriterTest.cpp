@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include "gtest/gtest.h"
-#include "writer/ParquetWriter.hpp"
+#include "writer/JsonParquetWriter.hpp"
 #include "ParquetFile.hpp"
 #include "ParquetTupleReader.hpp"
 #include "schema/parser/SchemaParser.hpp"
@@ -27,7 +27,7 @@ TEST_F(ParquetWriterTest, Simple) {
 	{
 		SchemaParser parser("testdata/schema/nested.schema");
 		GroupElement* schema = parser.parseSchema();
-		ParquetWriter w(schema, "testdata/out.parquet");
+		JsonParquetWriter w(schema, "testdata/out.parquet");
 		w.put("testdata/json/nested-required-norepetition.json");
 		w.write();
 	}
@@ -77,7 +77,7 @@ TEST_F(ParquetWriterTest, Repetition) {
 	{
 		SchemaParser parser("testdata/schema/nested.schema");
 		GroupElement* schema = parser.parseSchema();
-		ParquetWriter w(schema, "testdata/out.parquet");
+		JsonParquetWriter w(schema, "testdata/out.parquet");
 		w.put("testdata/json/nested-required-repetition.json");
 		w.write();
 	}
@@ -112,7 +112,7 @@ TEST_F(ParquetWriterTest, OptionalNull) {
 	{
 		SchemaParser parser("testdata/schema/nested-optional.schema");
 		GroupElement* schema = parser.parseSchema();
-		ParquetWriter w(schema, "testdata/out.parquet");
+		JsonParquetWriter w(schema, "testdata/out.parquet");
 		w.put("testdata/json/nested-optional-repetition.json");
 		w.write();
 	}
@@ -148,7 +148,7 @@ TEST_F(ParquetWriterTest, BigFile) {
 	{
 		SchemaParser parser("testdata/schema/simpleint.schema");
 		GroupElement* schema = parser.parseSchema();
-		ParquetWriter w(schema, "testdata/out.parquet");
+		JsonParquetWriter w(schema, "testdata/out.parquet");
 		for (int i=0; i < 100000; i++)
 			w.put("testdata/json/simpleint.json");
 		w.write();
@@ -166,30 +166,3 @@ TEST_F(ParquetWriterTest, BigFile) {
 	ASSERT_FALSE(reader.next());
 }
 
-
-/*
-TEST_F(ParquetWriterTest, SimpleInt) {
-	SchemaParser parser("testdata/schema/simpleint.schema");
-	GroupElement* schema = parser.parseSchema();
-	ParquetWriter w(schema, "testdata/simpleint.parquet");
-	w.put("testdata/json/simpleint.json");
-	w.write();
-}
-
-
-TEST_F(ParquetWriterTest, NestedOptionalNull) {
-	SchemaParser parser("testdata/schema/nested-optional.schema");
-	GroupElement* schema = parser.parseSchema();
-	ParquetWriter w(schema, "testdata/nested-optional.parquet");
-	w.put("testdata/json/nested-optional-repetition.json");
-	w.write();
-}
-
-TEST_F(ParquetWriterTest, WriteTool) {
-	SchemaParser parser("testdata/schema/nested.schema");
-	GroupElement* schema = parser.parseSchema();
-	ParquetWriter w(schema, "testdata/nested-required-norepetition.parquet");
-	w.put("testdata/json/nested-required-norepetition.json");
-	w.write();
-}
-*/

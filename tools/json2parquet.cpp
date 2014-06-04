@@ -1,6 +1,6 @@
 
 #include <iostream>
-#include "writer/ParquetWriter.hpp"
+#include "writer/JsonParquetWriter.hpp"
 #include "schema/parser/SchemaParser.hpp"
 
 using namespace parquetbase;
@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 	std::string outfile = argv[3];
 	parser::SchemaParser parser{schemafile};
 	GroupElement* schema = parser.parseSchema();
-	writer::ParquetWriter writer{schema, outfile};
+	writer::JsonParquetWriter writer{schema, outfile};
 	writer.put(jsonfile);
 	writer.write();
 	return 0;
