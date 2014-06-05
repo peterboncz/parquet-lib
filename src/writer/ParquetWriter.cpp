@@ -13,8 +13,10 @@ namespace writer {
 
 
 ParquetWriter::ParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize)
-		: maximum_pagesize(pagesize), filename(filename), schema(schema), columns(), r_levels(), d_levels() {
+		: filemeta(new schema::thrift::FileMetaData()), outfile(filename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc),
+			maximum_pagesize(pagesize), filename(filename), schema(schema), columns(), r_levels(), d_levels() {
 	initColumns(schema);
+	outfile.write("PAR1", 4); // magic number at beginning of file
 }
 
 
@@ -71,21 +73,32 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	if (!omit_d_levels) out.write(reinterpret_cast<char*>(dmem), dsize);
 	out.write(reinterpret_cast<char*>(ptrs.first), datasize);
 	delete[] ptrs.first;
+	ptrs.first = ptrs.second = nullptr;
 	return datasize+rsize+dsize+headersize;
 }
 
 
 void ParquetWriter::write() {
-	std::vector<schema::thrift::Encoding::type> encodings = {schema::thrift::Encoding::PLAIN, schema::thrift::Encoding::RLE};
-	std::ofstream outfile(filename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-	outfile.write("PAR1", 4); // magic number at beginning of file
-	schema::thrift::FileMetaData* filemeta = new schema::thrift::FileMetaData();
+	writeRowgroup();
 	filemeta->__set_num_rows(num_rows);
 	filemeta->__set_version(3);
 	filemeta->__set_created_by(std::string("parquetbaselib"));
 	filemeta->__set_schema(schema::generateThriftSchema(schema));
+	filemeta->__set_row_groups(rowgroups);
+	uint64_t metasize = 0;
+	uint8_t* metamem = util::thrift_serialize(*filemeta, metasize);
+	outfile.write(reinterpret_cast<char*>(metamem), metasize);
+	uint32_t meta32 = uint32_t(metasize);
+	outfile.write(reinterpret_cast<char*>(&meta32), 4);
+	outfile.write("PAR1", 4);
+	outfile.close();
+}
+
+
+void ParquetWriter::writeRowgroup(bool last) {
+	std::vector<schema::thrift::Encoding::type> encodings = {schema::thrift::Encoding::PLAIN, schema::thrift::Encoding::RLE};
 	schema::thrift::RowGroup rg;
-	rg.__set_num_rows(num_rows);
+	rg.__set_num_rows(num_rows_group);
 	std::vector<schema::thrift::ColumnChunk> colchunks;
 	for (auto col : columns) {
 		schema::thrift::ColumnChunk colchunk;
@@ -123,16 +136,20 @@ void ParquetWriter::write() {
 		colchunks.push_back(colchunk);
 	}
 	rg.__set_columns(colchunks);
-	std::vector<schema::thrift::RowGroup> rowgroups;
 	rowgroups.push_back(rg);
-	filemeta->__set_row_groups(rowgroups);
-	uint64_t metasize = 0;
-	uint8_t* metamem = util::thrift_serialize(*filemeta, metasize);
-	outfile.write(reinterpret_cast<char*>(metamem), metasize);
-	uint32_t meta32 = uint32_t(metasize);
-	outfile.write(reinterpret_cast<char*>(&meta32), 4);
-	outfile.write("PAR1", 4);
-	outfile.close();
+	if (last) return; // last rowgroup, so skip cleanup
+	num_rows_group = 0;
+	for (auto& col : columns) {
+		finished_pages[col.first].clear();
+		finished_r_levels[col.first].clear();
+		finished_d_levels[col.first].clear();
+		uint8_t* ptr = new uint8_t[maximum_pagesize];
+		auto& p = col.second;
+		p.first = ptr;
+		p.second = ptr;
+		r_levels[col.first].clear();
+		d_levels[col.first].clear();
+	}
 }
 
 
@@ -140,14 +157,22 @@ void ParquetWriter::changePageIf(schema::SimpleElement* column, uint64_t request
 	auto& p = columns[column];
 	// check if new value fits onto current page, if not finish page and add new one
 	if (p.second - p.first <= maximum_pagesize - requested_size) return;
+	current_rowgroupsize += (p.second - p.first);
 	finished_pages[column].push_back({p.first, p.second});
-	p.first = new uint8_t[maximum_pagesize];
-	p.second = p.first;
+	uint8_t* ptr = new uint8_t[maximum_pagesize];
+	p.first = ptr;
+	p.second = ptr;
 	finished_r_levels[column].push_back({});
 	finished_r_levels[column].back().swap(r_levels[column]);
 	finished_d_levels[column].push_back({});
 	finished_d_levels[column].back().swap(d_levels[column]);
 }
 
+
+void ParquetWriter::newRow() {
+	if (current_rowgroupsize >= STANDARD_ROWGROUPSIZE)
+		writeRowgroup(false);
+	++num_rows; ++num_rows_group;
+}
 
 }}

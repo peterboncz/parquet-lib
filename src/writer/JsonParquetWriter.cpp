@@ -18,7 +18,7 @@ JsonParquetWriter::JsonParquetWriter(schema::GroupElement* schema, std::string f
 
 void JsonParquetWriter::put(const rapidjson::Document& document) {
 	for (auto it=document.Begin(); it != document.End(); ++it) {
-		num_rows++;
+		newRow();
 		putMessage(StringVector(), *it, schema, 0, 0);
 	}
 }
