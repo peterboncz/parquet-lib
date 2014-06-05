@@ -190,7 +190,7 @@ void CSVParquetWriter::put(std::string headerfilename, std::string filename) {
 			if (!newval && compare(row.begin()+p.first, row.begin()+p.second, cur.begin()+p.first, cur.begin()+p.second)) {
 				newval = true;
 				r = (*itgroup)->r_level;
-				if (itmap == colmapping.begin()) ++num_rows;
+				if (itmap == colmapping.begin()) ++num_rows; // new top-level tuple/object
 			}
 
 			d = (*itgroup)->d_level;

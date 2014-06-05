@@ -61,8 +61,8 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	schema::thrift::PageHeader ph;
 	ph.__set_data_page_header(dph);
 	ph.__set_type(schema::thrift::PageType::DATA_PAGE);
-	ph.__set_uncompressed_page_size(datasize+rsize+dsize);
-	ph.__set_compressed_page_size(datasize+rsize+dsize);
+	ph.__set_uncompressed_page_size(int32_t(datasize+rsize+dsize));
+	ph.__set_compressed_page_size(int32_t(datasize+rsize+dsize));
 	uint64_t headersize = 0;
 	uint8_t* headermem = util::thrift_serialize(ph, headersize);
 
@@ -108,13 +108,17 @@ void ParquetWriter::write() {
 		auto rlevel_end = finished_r_levels[col.first].end();
 		auto dlevel_end = finished_d_levels[col.first].end();
 		uint64_t pagesize = 0;
+		int64_t num_values = 0;
 		while (page_it != page_end) {
 			pagesize += generatePage(outfile, *page_it, col.first, *rlevel_it, *dlevel_it);
+			num_values += int64_t(rlevel_it->size());
 			++page_it; ++rlevel_it; ++dlevel_it;
 		}
 		pagesize += generatePage(outfile, col.second, col.first, r_levels[col.first], d_levels[col.first]);
+		num_values += int64_t(r_levels[col.first].size());
 		colmeta.__set_total_compressed_size(pagesize);
 		colmeta.__set_total_uncompressed_size(pagesize);
+		colmeta.__set_num_values(num_values);
 		colchunk.__set_meta_data(colmeta);
 		colchunks.push_back(colchunk);
 	}
