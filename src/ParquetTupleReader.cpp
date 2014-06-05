@@ -13,6 +13,7 @@ ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<std::strin
 	std::vector<ParquetColumn> pcolumns;
 	for (std::string& col_name : column_names) {
 		ParquetColumn col = rowgroup.column(col_name);
+		schema_columns.push_back(col.getSchema());
 		pcolumns.push_back(std::move(col));
 	}
 	init(std::move(pcolumns));
@@ -20,7 +21,7 @@ ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<std::strin
 
 
 ParquetTupleReader::ParquetTupleReader(ParquetFile* file, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids, bool virtual_fks, bool recursivefks)
-		: file(file), columns(), virtual_ids(virtual_ids), virtual_fks(virtual_fks), recursivefks(recursivefks) {
+		: file(file), schema_columns(schema_columns), columns(), virtual_ids(virtual_ids), virtual_fks(virtual_fks), recursivefks(recursivefks) {
 	ParquetRowGroup rowgroup = file->rowgroup(0);
 	std::vector<ParquetColumn> pcolumns;
 	for (auto* scol : schema_columns) {
@@ -72,44 +73,6 @@ void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 	}
 }
 
-/*
-bool ParquetTupleReader::next() {
-	uint8_t r, d;
-	uint8_t* ptr;
-	auto level_it = levels.begin();
-	auto values_it = values.begin();
-	auto valuesizes_it = valuesizes.begin();
-	bool new_parent_record = true;
-	bool all_null = true;
-	uint slot = 0;
-	uint8_t r_level = 0;
-	uint count = 0;
-	for (auto& col : columns) {
-		bool res = col.nextValue(r, d, ptr);
-		if (!res) ++count;//return false;
-		r_level = r;
-		if (ptr != nullptr) all_null = false;
-		*level_it = Levels(r, d);
-		*values_it = ptr;
-		valuesizes[slot++] = col.getValueSize();
-		level_it++; values_it++;
-	}
-	assert(count == 0 || count == columns.size());
-	if (count > 0) return false;
-	if (virtual_ids && !all_null)
-		++(*id_ptr);
-	if (r_level < max_r_level) {
-		if (virtual_fks && !recursivefks)
-			++(*(fk_ptrs.front()));
-		else if (recursivefks) {
-			for (uint8_t i=0; i < max_r_level-r_level; i++)
-				++(*(fk_ptrs[i]));
-		}
-	}
-	return true;
-}
-*/
-
 
 bool ParquetTupleReader::next() {
 	uint8_t* ptr;
@@ -121,7 +84,22 @@ bool ParquetTupleReader::next() {
 	if (levels.empty()) return false;
 	for (auto& p : levels) {
 		if (p.first >= cur_r_level) {
-			if (!col_it->nextValue(ptr)) return false;
+			if (!col_it->nextValue(ptr)) {
+				// Switch to next rowgroup
+				if (current_rowgroup+1 < file->numberOfRowgroups()) {
+					ParquetRowGroup rowgroup = file->rowgroup(++current_rowgroup);
+					uint index = 0;
+					uint8_t r, d;
+					for (auto* scol : schema_columns) {
+						ParquetColumn col = rowgroup.column(scol);
+						col.nextLevels(r, d);
+						levels[index] = {r, d};
+						columns[index++] = std::move(col);
+					}
+					cur_r_level = 0;
+					return next();
+				} else return false;
+			}
 			*valuesizes_it = col_it->getValueSize();
 			col_it->nextLevels(p.first, p.second);
 			*values_it = ptr;

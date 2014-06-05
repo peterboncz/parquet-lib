@@ -13,7 +13,9 @@ class ParquetTupleReader : public TupleReader {
 protected:
 	typedef std::pair<uint8_t, uint8_t> Levels; // <r_level, d_level>
 	std::vector<std::string> column_names;
+	std::vector<schema::SimpleElement*> schema_columns;
 	ParquetFile* file;
+	uint current_rowgroup = 0;
 	std::vector<ParquetColumn> columns;
 	std::vector<schema::SimpleElement*> schemas;
 	std::vector<uint8_t*> values;
