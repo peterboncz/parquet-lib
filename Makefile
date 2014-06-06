@@ -1,14 +1,24 @@
-CXX ?= g++
-CPPFLAGS = -Ilibs/gtest/include/ -Iinclude/ -Igen/ -DRAPIDJSON_SSE42
-LDFLAGS = -pthread -lpthread -lthrift -msse4.2
-OPT ?= -g3 -O0 -std=c++11 -march=native #-Wall
-
 ENABLE_HDFS ?= 
 ENABLE_COMPRESSION ?= 1
 -include config.local
 
+CPPFLAGS = 
+LDFLAGS = 
+ifneq ($(INCLUDE_PATH),)
+CPPFLAGS := $(CPPFLAGS) -I$(INCLUDE_PATH)
+endif
+ifneq ($(LIB_PATH),)
+LDFLAGS := $(LDFLAGS) -L$(LIB_PATH)
+endif
+
+CXX ?= g++
+CPPFLAGS := $(CPPFLAGS) -Ilibs/gtest/include/ -Iinclude/ -Igen/ -DRAPIDJSON_SSE42
+LDFLAGS := $(LDFLAGS) -pthread -lpthread -lthrift -msse4.2
+OPT ?= -g3 -O0 -std=c++11 -march=native #-Wall
+
+
 ifneq ($(ENABLE_COMPRESSION),)
-LDFLAGS := $(LDFLAGS) -lz -lsnappy
+LDFLAGS := $(LDFLAGS) -lz -lsnappy -llzo2
 CPPFLAGS := $(CPPFLAGS) -DENABLE_COMPRESSION
 endif
 

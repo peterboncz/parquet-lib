@@ -2,6 +2,7 @@
 #ifdef ENABLE_COMPRESSION
 #include "zlib.h"
 #include "snappy.h"
+#include "lzo/lzo1x.h"
 #endif
 
 namespace parquetbase {
@@ -42,6 +43,16 @@ uint8_t* decompress(uint8_t* compressed_mem, uint64_t compressed_size, uint64_t 
 		uint8_t* mem = new uint8_t[uncompressed_size];
 		bool res = snappy::RawUncompress(reinterpret_cast<char*>(compressed_mem), compressed_size, reinterpret_cast<char*>(mem));
 		if (res) return mem;
+		else {
+			delete[] mem;
+			return nullptr;
+		}
+	} else if (codec == CompressionCodec::LZO) {
+		uint8_t* mem = new uint8_t[uncompressed_size];
+		lzo_init();
+		uint64_t outsize = 0;
+		auto res = lzo1x_decompress(reinterpret_cast<const unsigned char*>(compressed_mem), compressed_size, reinterpret_cast<unsigned char*>(mem), &outsize, nullptr);
+		if (res == LZO_E_OK && outsize == uncompressed_size) return mem;
 		else {
 			delete[] mem;
 			return nullptr;
