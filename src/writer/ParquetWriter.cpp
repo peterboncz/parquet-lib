@@ -73,6 +73,8 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	if (!omit_d_levels) out.write(reinterpret_cast<char*>(dmem), dsize);
 	out.write(reinterpret_cast<char*>(ptrs.first), datasize);
 	delete[] ptrs.first;
+	delete[] rmem;
+	delete[] dmem;
 	ptrs.first = ptrs.second = nullptr;
 	return datasize+rsize+dsize+headersize;
 }

@@ -14,7 +14,7 @@ endif
 CXX ?= g++
 CPPFLAGS := $(CPPFLAGS) -Ilibs/gtest/include/ -Iinclude/ -Igen/ -DRAPIDJSON_SSE42
 LDFLAGS := $(LDFLAGS) -pthread -lpthread -lthrift -msse4.2
-OPT ?= -g3 -O0 -std=c++11 -march=native #-Wall
+OPT ?= -g3 -O0 -std=c++11 -march=native -fPIC #-Wall
 
 
 ifneq ($(ENABLE_COMPRESSION),)

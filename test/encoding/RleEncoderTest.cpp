@@ -1,10 +1,12 @@
 #include <iostream>
 #include "gtest/gtest.h"
+#include "util/BitUtil.hpp"
 #include "encoding/RleEncoder.hpp"
 #include "encoding/RleDecoder.hpp"
 
 
 using namespace parquetbase::encoding;
+using namespace parquetbase::util;
 
 
 TEST(RleEncoderTest, Simple) {
@@ -27,4 +29,21 @@ TEST(RleEncoderTest, Simple) {
     ASSERT_TRUE(d.get(val));
     ASSERT_EQ(0, val);
     //ASSERT_FALSE(d.get(val));
+}
+
+
+TEST(RleEncoderTest, RepeatedNumbers) {
+	for (uint8_t i=0; i <= 8; ++i) {
+		std::vector<uint8_t> values(1000000, i);
+		uint64_t size = 0;
+		uint8_t* buffer = encodeRle(values, bitwidth(i), size);
+		RleDecoder d(buffer, size, bitwidth(i));
+		uint8_t val;
+		for (uint j=0; j < 1000000; ++j) {
+			ASSERT_TRUE(d.get(val));
+			ASSERT_EQ(i, val);
+		}
+		ASSERT_FALSE(d.get(val));
+		delete[] buffer;
+	}
 }
