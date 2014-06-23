@@ -35,10 +35,18 @@ void ParquetWriter::initColumns(schema::GroupElement* schemaelement) {
 }
 
 
-uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, const std::vector<uint8_t>& r_levels, const std::vector<uint8_t>& d_levels) {
+uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, std::vector<uint8_t>& r_levels, std::vector<uint8_t>& d_levels) {
 	uint64_t rsize = 0;
 	bool omit_r_levels = false;
 	uint8_t* rmem = nullptr;
+	// Bitpacking requires number of values to be a multiple of 8
+	if (r_levels.size() % 8 != 0) {
+		uint count = 8 - (r_levels.size() % 8);
+		for (uint i=0; i < count; ++i) {
+			r_levels.push_back(0);
+			d_levels.push_back(0);
+		}
+	}
 	if (schema->parent->parent == nullptr) {
 		omit_r_levels = true;
 		rsize = 0;

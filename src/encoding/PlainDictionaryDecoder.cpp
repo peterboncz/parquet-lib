@@ -4,12 +4,12 @@ namespace parquetbase {
 namespace encoding {
 
 
-PlainDictionaryDecoder::PlainDictionaryDecoder(uint8_t* buffer, uint64_t size, ParquetDictionaryPage* dict)
+PlainDictionaryDecoder::PlainDictionaryDecoder(uint8_t* buffer, uint64_t size, uint64_t num_values, ParquetDictionaryPage* dict)
 		: dict(dict) {
-	uint8_t bitwidth = *buffer;
+	uint8_t bitwidth = *buffer; // first byte of data specifies bitwidth
 	size--;
 	buffer++;
-	id_decoder = RleDecoder(buffer, buffer+size, bitwidth);
+	id_decoder = RleDecoder(buffer, buffer+size, bitwidth, num_values);
 }
 
 

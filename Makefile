@@ -4,17 +4,21 @@ ENABLE_COMPRESSION ?= 1
 
 CPPFLAGS = 
 LDFLAGS = 
+OPTIMIZER = -g0 -O3
 ifneq ($(INCLUDE_PATH),)
 CPPFLAGS := $(CPPFLAGS) -I$(INCLUDE_PATH)
 endif
 ifneq ($(LIB_PATH),)
 LDFLAGS := $(LDFLAGS) -L$(LIB_PATH)
 endif
+ifneq ($(DEBUG),)
+OPTIMIZER := -g3 -O0
+endif
 
 CXX ?= g++
 CPPFLAGS := $(CPPFLAGS) -Ilibs/gtest/include/ -Iinclude/ -Igen/ -DRAPIDJSON_SSE42
 LDFLAGS := $(LDFLAGS) -pthread -lpthread -lthrift -msse4.2
-OPT ?= -g3 -O0 -std=c++11 -march=native -fPIC #-Wall
+OPT ?= $(OPTIMIZER) -std=c++11 -march=native -fPIC #-Wall
 
 
 ifneq ($(ENABLE_COMPRESSION),)

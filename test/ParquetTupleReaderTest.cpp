@@ -23,11 +23,11 @@ TEST(ParquetTupleReaderTest, FlatSchema) {
 
 TEST(ParquetTupleReaderTest, NullInNested) {
 	ParquetFile file(std::string("testdata/nested-null.parquet"));
-	ParquetTupleReader reader(&file, {string("mp.map.key"),string("mp.map.value")});
+	ParquetTupleReader reader(&file, {string("id"), string("mp.map.key"),string("mp.map.value")});
 	for (uint i=0; i < 2; i++) {
 		ASSERT_TRUE(reader.next());
-		ASSERT_EQ(nullptr, reader.getValuePtr(0));
 		ASSERT_EQ(nullptr, reader.getValuePtr(1));
+		ASSERT_EQ(nullptr, reader.getValuePtr(2));
 	}
 	ASSERT_FALSE(reader.next());
 }

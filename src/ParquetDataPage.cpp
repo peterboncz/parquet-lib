@@ -8,7 +8,7 @@ namespace parquetbase {
 
 void ParquetDataPage::initDecoder() {
 	if (metadata.encoding == schema::thrift::Encoding::PLAIN_DICTIONARY) {
-		data_decoder = new encoding::PlainDictionaryDecoder(mem, mem_size, dict);
+		data_decoder = new encoding::PlainDictionaryDecoder(mem, mem_size, num_values, dict);
 	} else if (metadata.encoding == schema::thrift::Encoding::PLAIN) {
 		if (schema->type == schema::ColumnType::BYTE_ARRAY) {
 			data_decoder = new encoding::PlainByteArrayDecoder(mem, mem_size);
@@ -24,6 +24,7 @@ void ParquetDataPage::initDecoder() {
 ParquetDataPage::ParquetDataPage(uint8_t* mem, uint64_t mem_size,
 		schema::thrift::DataPageHeader metadata, schema::SimpleElement* schema, ParquetDictionaryPage* dict)
 		: mem(mem), mem_size(mem_size), metadata(metadata), schema(schema), dict(dict) {
+	this->num_values = metadata.num_values;
 	r_level = schema->r_level;
 	d_level = schema->d_level;
 	value_size = schema->columnSize();
@@ -32,7 +33,7 @@ ParquetDataPage::ParquetDataPage(uint8_t* mem, uint64_t mem_size,
 	if (schema->parent->parent == nullptr) {
 		omit_r_levels = true;
 	} else {
-		r_decoder = encoding::RleDecoder(mem, size, util::bitwidth(schema->r_level));
+		r_decoder = encoding::RleDecoder(mem, size, util::bitwidth(schema->r_level), num_values);
 		this->mem_size -= size;
 		this->mem += size;
 		size = mem_size;
@@ -41,12 +42,11 @@ ParquetDataPage::ParquetDataPage(uint8_t* mem, uint64_t mem_size,
 	if (schema->repetition == schema::RepetitionType::REQUIRED && schema->parent->parent == nullptr) {
 		omit_d_levels = true;
 	} else {
-		d_decoder = encoding::RleDecoder(this->mem, size, util::bitwidth(schema->d_level));
+		d_decoder = encoding::RleDecoder(this->mem, size, util::bitwidth(schema->d_level), num_values);
 		this->mem_size -= size;
 		this->mem += size;
 	}
 
-	this->num_values = metadata.num_values;
 	initDecoder();
 }
 
