@@ -103,7 +103,7 @@ std::vector<std::string> readLine(std::ifstream& file) {
 
 void CSVParquetWriter::handleGroup(vsit sit, int32_t id, VecVecSimpleEl::iterator mapit, VecGroupEl::iterator groupit, VecI::iterator idit, VecI::iterator fkit, VecMap::iterator offsetit, VecF::iterator fileit, uint8_t r, uint8_t d) {
 	if (mapit == colmapping.end()) return;
-	std::map<int32_t, int32_t>& m = *offsetit;
+	std::map<int32_t, int64_t>& m = *offsetit;
 	auto it = m.find(id);
 	if (it == m.end()) {
 		// write null values with parent d_level and return
@@ -111,10 +111,10 @@ void CSVParquetWriter::handleGroup(vsit sit, int32_t id, VecVecSimpleEl::iterato
 		return;
 	}
 	d = (*groupit)->d_level;
-	int32_t offset = it->second;
+	int64_t offset = it->second;
 	std::ifstream& file = *(*fileit);
 	file.clear();
-	file.seekg(offset);
+	file.seekg(offset, file.beg);
 	std::vector<std::string> cols = readLine(file);
 	int32_t curfk;
 	while(!cols.empty() && (curfk = std::stoi(cols[*fkit])) == id) {
@@ -151,6 +151,7 @@ void CSVParquetWriter::put(std::string headerfilename) {
 				map.push_back(nullptr);
 			} else {
 				auto* s = dynamic_cast<schema::SimpleElement*>(group->find(*it));
+				if (s == nullptr) throw Exception("Element "+*it+" not found in schema");
 				map.push_back(s);
 			}
 			++it;
@@ -164,16 +165,16 @@ void CSVParquetWriter::put(std::string headerfilename) {
 	headerfile.close();
 
 	// Read offsets from offsetfiles
-	char* buffer = new char[sizeof(int32_t)*2];
+	char* buffer = new char[sizeof(int32_t)+sizeof(int64_t)];
 	int32_t* p1 = reinterpret_cast<int32_t*>(buffer);
-	int32_t* p2 = reinterpret_cast<int32_t*>(buffer+sizeof(int32_t));
+	int64_t* p2 = reinterpret_cast<int64_t*>(buffer+sizeof(int32_t));
 	for (auto s : offsetfiles) {
-		std::map<int32_t, int32_t> offsets;
+		std::map<int32_t, int64_t> offsets;
 		std::ifstream file{s};
-		file.read(buffer, 8);
+		file.read(buffer, sizeof(int32_t)+sizeof(int64_t));
 		while(!file.eof()) {
 			offsets[*p1] = *p2;
-			file.read(buffer, 8);
+			file.read(buffer, sizeof(int32_t)+sizeof(int64_t));
 		}
 		file.close();
 		offsetsvector.push_back(std::move(offsets));
@@ -224,9 +225,9 @@ void writeOffsets(std::string headerfilename) {
 	auto fileit = filenames.begin();
 	auto offsetfileit = offsetfiles.begin();
 	auto fkit = fkcols.begin();
-	char* buffer = new char[sizeof(int32_t)*2];
+	char* buffer = new char[sizeof(int32_t)+sizeof(int64_t)];
 	int32_t* p1 = reinterpret_cast<int32_t*>(buffer);
-	int32_t* p2 = reinterpret_cast<int32_t*>(buffer+sizeof(int32_t));
+	int64_t* p2 = reinterpret_cast<int64_t*>(buffer+sizeof(int32_t));
 	while(fileit != filenames.end()) {
 		std::cout << "Writing offsets for " << *fileit << std::endl;
 		std::ofstream offsets{*offsetfileit};
@@ -234,16 +235,16 @@ void writeOffsets(std::string headerfilename) {
 		uint fk = *fkit;
 		std::vector<std::string> cols = readLine(file);
 		int32_t curfk = std::stoi(cols[fk]);
-		int32_t offset = 0;
+		int64_t offset = 0;
 		*p1 = curfk;
 		*p2 = offset;
-		offsets.write(buffer, sizeof(int32_t)*2);
+		offsets.write(buffer, sizeof(int32_t)+sizeof(int64_t));
 		while(!cols.empty()) {
 			if (std::stoi(cols[fk]) != curfk) {
 				curfk = std::stoi(cols[fk]);
 				*p1 = curfk;
 				*p2 = offset;
-				offsets.write(buffer, sizeof(int32_t)*2);
+				offsets.write(buffer, sizeof(int32_t)+sizeof(int64_t));
 			}
 			offset = file.tellg();
 			cols = readLine(file);

@@ -59,7 +59,7 @@ void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 		valuesizes.push_back(4);
 		*id_ptr = 0;
 	}
-	if (!flat && (virtual_fks || recursivefks)) throw Exception("FKs only supported with all selected columns in one group");
+	//if (!flat && (virtual_fks || recursivefks)) throw Exception("FKs only supported with all selected columns in one group");
 	uint8_t tmp;
 	if (!recursivefks && virtual_fks) tmp = 1;
 	else if (recursivefks) tmp = max_r_level;
@@ -119,6 +119,7 @@ bool ParquetTupleReader::next() {
 		}
 	}
 	cur_r_level = new_r_level;
+	if (all_null) return next();
 	return true;
 }
 

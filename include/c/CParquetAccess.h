@@ -15,6 +15,22 @@ typedef enum _ParquetType {
 } ParquetType;
 
 
+typedef struct _RelationSchema {
+	char* name;
+	const char* primarykey;
+	const char* fk;
+	int numcols;
+	char** colnames;
+	bool* colnullables;
+	ParquetType* coltypes;
+} RelationSchema;
+
+
+typedef struct _PL_Vector {
+	int numelements;
+	RelationSchema** elements;
+} PL_Vector;
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +44,8 @@ void* pl_getSchema(void* parquetfile, const char* schemapath);
 
 void* pl_getSchemaColumn(void* parquetfile, void* schema, const char* colname);
 
+void* pl_getOneRequired(void* parquetfile, void* schema);
+
 
 ParquetReader* pl_createTupleReader(void* parquetfile, void** columns, int numcols, int vecsize, bool virtualids, bool virtualfks, bool recursivefks);
 
@@ -40,6 +58,10 @@ const char* pl_column_getName(void* schemacol);
 
 
 bool pl_readTuples(ParquetReader* parquetreader, void** vectors, long long* count);
+
+
+PL_Vector pl_emitRelations(void* schema, const char* alias);
+
 
 
 #ifdef __cplusplus

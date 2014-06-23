@@ -15,7 +15,7 @@ public:
 	typedef std::vector<std::string>::iterator vsit;
 	typedef std::vector<std::vector<schema::SimpleElement*>> VecVecSimpleEl;
 	typedef std::vector<schema::GroupElement*> VecGroupEl;
-	typedef std::vector<std::map<int32_t, int32_t>> VecMap;
+	typedef std::vector<std::map<int32_t, int64_t>> VecMap;
 	typedef std::vector<uint> VecI;
 	typedef std::vector<std::ifstream*> VecF;
 protected:

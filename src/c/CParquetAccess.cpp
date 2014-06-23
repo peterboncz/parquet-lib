@@ -2,6 +2,8 @@
 
 #include <cstring>
 #include <cassert>
+#include <fstream>
+#include "Exception.hpp"
 #include "ParquetFile.hpp"
 #include "ParquetTupleReader.hpp"
 #include "schema/parser/SchemaParser.hpp"
@@ -23,15 +25,16 @@ void* pl_openParquetFile(const char* filename) {
 
 ParquetReader* pl_createTupleReader(void* parquetfile, void** cols, int numcols, int vecsize, bool virtualids, bool virtualfks, bool recursivefks) {
 	ParquetFile* file = reinterpret_cast<ParquetFile*>(parquetfile);
-	std::vector<schema::SimpleElement*> columns;
-	for (int i=0; i < numcols; ++i)
-		columns.push_back(reinterpret_cast<schema::SimpleElement*>(cols[i]));
-	ParquetTupleReader* reader = new ParquetTupleReader(file, columns, virtualids, virtualfks, recursivefks);
 	ParquetReader* r = new ParquetReader();
 	r->num_columns = numcols;
 	r->parquetfile = file;
-	r->reader = reader;
 	r->vectorsize = vecsize;
+	std::vector<schema::SimpleElement*> columns;
+	if(numcols == 0) numcols = 1;
+	for (int i=0; i < numcols; ++i)
+		columns.push_back(reinterpret_cast<schema::SimpleElement*>(cols[i]));
+	ParquetTupleReader* reader = new ParquetTupleReader(file, columns, virtualids, virtualfks, recursivefks);
+	r->reader = reader;
 	return r;
 }
 
@@ -51,6 +54,18 @@ void* pl_getSchemaColumn(void* parquetfile, void* schemaptr, const char* colname
 }
 
 
+void* pl_getOneRequired(void* parquetfile, void* schemaptr) {
+	ParquetFile* file = reinterpret_cast<ParquetFile*>(parquetfile);
+	auto* schema = reinterpret_cast<schema::GroupElement*>(schemaptr);
+	for (auto* el : schema->elements) {
+		auto* s = dynamic_cast<schema::SimpleElement*>(el);
+		if (s != nullptr && s->repetition == schema::RepetitionType::REQUIRED)
+			return s;
+	}
+	return nullptr;
+}
+
+
 bool pl_readTuples(ParquetReader* parquetreader, void** vectors, long long* count) {
 	ParquetTupleReader* reader = reinterpret_cast<ParquetTupleReader*>(parquetreader->reader);
 	assert(reader != nullptr);
@@ -59,6 +74,7 @@ bool pl_readTuples(ParquetReader* parquetreader, void** vectors, long long* coun
 	long long i=0;
 	for (i=0; i < *count; ++i) {
 		if (!reader->next()) break;
+		if (parquetreader->num_columns == 0) continue; // only dummy column (count aggregation) -> do not fill vector
 		for (uint j=0; j < reader->numColumns(); ++j) {
 			if (vecs[vectorsize+j]) {
 				if (reader->getValuePtr(j) == nullptr) {
@@ -106,4 +122,46 @@ const char* pl_column_getName(void* schemacol) {
 	auto* col = reinterpret_cast<schema::SimpleElement*>(schemacol);
 	return col->name.c_str();
 }
+
+
+void _emitRelations(PL_Vector& relations, schema::GroupElement* group, std::string name) {
+	RelationSchema* rs = new RelationSchema();
+	rs->colnames = new char*[group->elements.size()];
+	rs->coltypes = new ParquetType[group->elements.size()];
+	rs->colnullables = new bool[group->elements.size()];
+	rs->numcols = 0;
+	std::vector<schema::GroupElement*> backlog;
+	rs->name = new char[name.size()+1];
+	strcpy(rs->name, name.c_str());
+	printf("Copied string %s\n", rs->name);
+	rs->primarykey = "p__id";
+	if (group->parent != nullptr) rs->fk = "p__fk";
+	for (auto* el : group->elements) {
+		schema::GroupElement* g = dynamic_cast<schema::GroupElement*>(el);
+		if (g != nullptr) {
+			backlog.push_back(g);
+		} else {
+			schema::SimpleElement* s = dynamic_cast<schema::SimpleElement*>(el);
+			rs->colnames[rs->numcols] = new char[s->name.size()+1];
+			memcpy(rs->colnames[rs->numcols], s->name.c_str(), s->name.size()+1);
+			printf("Colname is %s\n", rs->colnames[rs->numcols]);
+			rs->colnullables[rs->numcols] = s->repetition==schema::RepetitionType::REQUIRED?false:true;
+			rs->coltypes[rs->numcols++] = ParquetType(static_cast<uint8_t>(s->type));
+		}
+	}
+	relations.elements[relations.numelements++] = rs;
+	//printf("Tablename %s\n", relations.elements[relations.numelements-1]->name);
+	for (auto* el : backlog)
+		_emitRelations(relations, el, name+"_"+group->name);
+}
+
+
+PL_Vector pl_emitRelations(void* schemaptr, const char* alias) {
+	auto* schema = reinterpret_cast<schema::GroupElement*>(schemaptr);
+	PL_Vector vec;
+	vec.numelements = 0;
+	_emitRelations(vec, schema, std::string(alias));
+	return vec;
+}
+
 
