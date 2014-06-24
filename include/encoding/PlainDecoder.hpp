@@ -16,6 +16,7 @@ public:
 	~PlainDecoder() {}
 	uint8_t* nextValue();
 	uint32_t getValueSize() { return value_size; }
+	uint64_t getValues(uint8_t*& vector, uint64_t num);
 };
 
 

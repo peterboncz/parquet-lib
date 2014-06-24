@@ -29,13 +29,14 @@ protected:
 	void init(std::vector<ParquetColumn> pcolumns);
 
 	uint8_t cur_r_level = 0;
-	bool flat;
+	bool flat, allrequired;
 
 public:
 	ParquetTupleReader(ParquetFile* file, std::vector<std::string> column_names, bool virtual_ids=false, bool virtual_fks=false, bool recursivefks=false);
 	ParquetTupleReader(const std::string& filename, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids=false, bool virtual_fks=false, bool recursivefks=false);
 	ParquetTupleReader(ParquetFile* file, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids=false, bool virtual_fks=false, bool recursivefks=false);
 	bool next();
+	uint64_t nextVector(uint8_t** vectors, uint64_t num_values);
 	bool nextNew();
 	uint8_t* getValuePtr(uint8_t column);
 	template <typename T>

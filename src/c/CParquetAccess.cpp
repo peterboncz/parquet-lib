@@ -106,6 +106,16 @@ bool pl_readTuples(ParquetReader* parquetreader, void** vectors, long long* coun
 }
 
 
+bool pl_readTuplesVectorized(ParquetReader* parquetreader, void** vectors, long long* count) {
+	ParquetTupleReader* reader = reinterpret_cast<ParquetTupleReader*>(parquetreader->reader);
+	assert(reader != nullptr);
+	int vectorsize = parquetreader->vectorsize;
+	uint8_t** vecs = reinterpret_cast<uint8_t**>(vectors);
+	*count = reader->nextVector(vecs, *count);
+	return true;
+}
+
+
 int pl_readerNumColumns(void* parquetreader) {
 	ParquetTupleReader* reader = reinterpret_cast<ParquetTupleReader*>(parquetreader);
 	return reader->numColumns();

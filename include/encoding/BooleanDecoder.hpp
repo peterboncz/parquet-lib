@@ -18,6 +18,7 @@ public:
 	uint8_t* nextValue();
 	bool get();
 	uint32_t getValueSize() { return 0; }
+	uint64_t getValues(uint8_t*& vector, uint64_t num);
 };
 
 

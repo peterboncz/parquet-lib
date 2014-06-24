@@ -87,4 +87,12 @@ uint32_t ParquetDataPage::getValueSize() {
 }
 
 
+uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num) {
+	if (num_values == 0) return 0;
+	uint64_t count = data_decoder->getValues(vector, num);
+	num_values -= count;
+	return count;
+}
+
+
 }

@@ -18,6 +18,7 @@ public:
 	~PlainDictionaryDecoder() {}
 	uint8_t* nextValue();
 	uint32_t getValueSize();
+	uint64_t getValues(uint8_t*& vector, uint64_t num);
 };
 
 

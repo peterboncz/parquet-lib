@@ -139,3 +139,21 @@ TEST(ParquetTupleReaderTest, NonFlatColumnsRepetition) {
 	ASSERT_EQ(101, reader.getValue<uint64_t>(2)); // Links.ref
 	ASSERT_FALSE(reader.next());
 }
+
+
+TEST(ParquetTupleReaderTest, Vectorized) {
+	ParquetFile file(std::string("testdata/simpleint.parquet"));
+	ParquetTupleReader reader(&file, {string("field1"),string("field2")});
+	int64_t* vec_field1 = new int64_t[4];
+	int64_t* vec_field2 = new int64_t[4];
+	uint8_t** vectors = new uint8_t*[2];
+	vectors[0] = reinterpret_cast<uint8_t*>(vec_field1);
+	vectors[1] = reinterpret_cast<uint8_t*>(vec_field2);
+	ASSERT_EQ(4, reader.nextVector(vectors, 4));
+	for (int64_t i=1; i <= 4; ++i) {
+		ASSERT_EQ(i, vec_field1[i-1]);
+		ASSERT_EQ(i*2, vec_field2[i-1]);
+	}
+	ASSERT_EQ(0, reader.nextVector(vectors, 4));
+}
+

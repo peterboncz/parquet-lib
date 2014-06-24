@@ -27,5 +27,16 @@ bool BooleanDecoder::get() {
 }
 
 
+uint64_t BooleanDecoder::getValues(uint8_t*& vector, uint64_t num) {
+	uint64_t count = 0;
+	while(buffer < bufferend && count < num) {
+		*vector = (*buffer << (7-offset)) >> 7;
+		++vector;
+		++count;
+		if (++offset == 8) { buffer++; offset = 0; }
+	}
+	return count;
+}
+
 
 }}

@@ -39,9 +39,11 @@ ParquetTupleReader::ParquetTupleReader(const std::string& filename, std::vector<
 void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 	schema::Element* schema_parent = nullptr;
 	flat = true;
+	allrequired = true;
 	for (auto& col : pcolumns) {
 		if (schema_parent == nullptr) schema_parent = col.getSchema()->parent;
-		if (schema_parent != col.getSchema()->parent) flat = false;//throw Exception("columns are not in one group");
+		if (schema_parent != col.getSchema()->parent || col.getSchema()->repetition == schema::RepetitionType::REPEATED) flat = false;//throw Exception("columns are not in one group");
+		if (col.getSchema()->repetition != schema::RepetitionType::REQUIRED) allrequired = false;
 		max_r_level = col.getSchema()->r_level;
 		values.push_back(nullptr);
 		valuesizes.push_back(0);
@@ -121,6 +123,31 @@ bool ParquetTupleReader::next() {
 	cur_r_level = new_r_level;
 	if (all_null) return next();
 	return true;
+}
+
+
+uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values) {
+	assert(flat);
+	assert(allrequired);
+	uint64_t count = 0;
+	for (auto& col : columns) {
+		count = col.getValues(*(vectors++), num_values);
+		if (count == 0) {
+			if (current_rowgroup+1 < file->numberOfRowgroups()) {
+				ParquetRowGroup rowgroup = file->rowgroup(++current_rowgroup);
+				uint index = 0;
+				uint8_t r, d;
+				for (auto* scol : schema_columns) {
+					ParquetColumn col = rowgroup.column(scol);
+					col.nextLevels(r, d);
+					levels[index] = {r, d};
+					columns[index++] = std::move(col);
+				}
+				return nextVector(vectors-1, num_values);
+			} else return 0;
+		}
+	}
+	return count;
 }
 
 

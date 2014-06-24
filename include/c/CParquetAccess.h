@@ -58,6 +58,7 @@ const char* pl_column_getName(void* schemacol);
 
 
 bool pl_readTuples(ParquetReader* parquetreader, void** vectors, long long* count);
+bool pl_readTuplesVectorized(ParquetReader* parquetreader, void** vectors, long long* count);
 
 
 PL_Vector pl_emitRelations(void* schema, const char* alias);

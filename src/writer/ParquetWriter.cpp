@@ -37,6 +37,7 @@ void ParquetWriter::initColumns(schema::GroupElement* schemaelement) {
 
 uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, std::vector<uint8_t>& r_levels, std::vector<uint8_t>& d_levels) {
 	uint64_t rsize = 0;
+	auto num_values = r_levels.size();
 	bool omit_r_levels = false;
 	uint8_t* rmem = nullptr;
 	// Bitpacking requires number of values to be a multiple of 8
@@ -67,7 +68,7 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	dph.__set_encoding(schema::thrift::Encoding::PLAIN);
 	dph.__set_definition_level_encoding(schema::thrift::Encoding::RLE);
 	dph.__set_repetition_level_encoding(schema::thrift::Encoding::RLE);
-	dph.__set_num_values(r_levels.size());
+	dph.__set_num_values(num_values);
 	schema::thrift::PageHeader ph;
 	ph.__set_data_page_header(dph);
 	ph.__set_type(schema::thrift::PageType::DATA_PAGE);

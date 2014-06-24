@@ -93,4 +93,16 @@ uint32_t ParquetColumn::getValueSize() {
 }
 
 
+uint64_t ParquetColumn::getValues(uint8_t* vector, uint64_t num) {
+	if (cur_page == nullptr) return 0;
+	uint64_t count = cur_page->getValues(vector, num);
+	while (count < num && cur_page != nullptr) {
+		if (cur_page->values_left() == 0) nextPage();
+		if (cur_page == nullptr) return count;
+		count += cur_page->getValues(vector, num-count);
+	}
+	return count;
+}
+
+
 }

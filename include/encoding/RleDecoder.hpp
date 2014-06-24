@@ -36,6 +36,7 @@ public:
 	uint8_t peek();
 	uint8_t* nextValue() { return nullptr; }
 	uint32_t getValueSize() { return 0; }
+	uint64_t getValues(uint8_t*& vector, uint64_t num) { return 0; };
 };
 
 
