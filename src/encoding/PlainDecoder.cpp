@@ -20,9 +20,11 @@ uint8_t* PlainDecoder::nextValue() {
 
 
 uint64_t PlainDecoder::getValues(uint8_t*& vector, uint64_t num) {
+	if (buffer >= bufferend) return 0;
 	num = std::min(uint64_t((bufferend-buffer)/value_size), num);
 	memcpy(vector, buffer, num*value_size);
 	vector += num*value_size;
+	buffer += num*value_size;
 	return num;
 }
 

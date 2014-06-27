@@ -46,6 +46,7 @@ public:
 	schema::Element* getSchema();// { return schema; }
 	uint32_t numberOfRowgroups();// { return filemetadata->row_groups.size(); }
 	ParquetRowGroup rowgroup(uint32_t num);
+	uint64_t numberOfRows();
 
 	static ParquetFile* file(const std::string& filename);
 	static std::unordered_map<std::string, ParquetFile*> files;

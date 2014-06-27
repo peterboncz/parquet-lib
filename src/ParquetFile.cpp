@@ -87,6 +87,15 @@ ParquetRowGroup ParquetFile::rowgroup(uint32_t num) {
 }
 
 
+uint64_t ParquetFile::numberOfRows() {
+	uint64_t count = 0;
+	for (auto& rg : filemetadata->row_groups) {
+		count += rg.num_rows;
+	}
+	return count;
+}
+
+
 std::unordered_map<std::string, ParquetFile*> ParquetFile::files{};
 
 

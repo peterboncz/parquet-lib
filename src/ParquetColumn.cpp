@@ -10,7 +10,7 @@ static const uint64_t INITIAL_HEADERSIZE = 512;
 namespace parquetbase {
 
 ParquetColumn::ParquetColumn(ParquetFile* parquetfile, uint64_t offset, schema::thrift::ColumnMetaData metadata, schema::SimpleElement* schema, uint64_t dict_offset)
-		: parquetfile(parquetfile), offset(offset), metadata(metadata), schema(schema), dict_page(nullptr) {
+		: parquetfile(parquetfile), offset(offset), metadata(metadata), schema(schema), dict_page(nullptr), num_values(metadata.num_values) {
 	//mem_end = mem + metadata.total_compressed_size;
 	offset_end = metadata.total_compressed_size + offset;
 	if (dict_offset > 0) {

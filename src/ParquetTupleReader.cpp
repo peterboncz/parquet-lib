@@ -151,6 +151,24 @@ uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values) 
 }
 
 
+uint64_t ParquetTupleReader::count() {
+	assert(columns.size() == 1);
+	auto* schema = schema_columns.front();
+	assert(schema->repetition == schema::RepetitionType::REQUIRED);
+	if (schema->parent->parent == nullptr) {
+		// field in top message -> use rowcount from rowgroups
+		return file->numberOfRows();
+	}
+	uint cur_rowgroup = 0;
+	uint64_t count = 0;
+	while (cur_rowgroup < file->numberOfRowgroups()) {
+		ParquetRowGroup rowgroup = file->rowgroup(cur_rowgroup++);
+		count += rowgroup.numberOfValues(schema);
+	}
+	return count;
+}
+
+
 uint8_t* ParquetTupleReader::getValuePtr(uint8_t column) {
 	return values[column];
 }

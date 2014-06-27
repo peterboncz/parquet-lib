@@ -37,7 +37,7 @@ public:
 	ParquetTupleReader(ParquetFile* file, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids=false, bool virtual_fks=false, bool recursivefks=false);
 	bool next();
 	uint64_t nextVector(uint8_t** vectors, uint64_t num_values);
-	bool nextNew();
+	uint64_t count();
 	uint8_t* getValuePtr(uint8_t column);
 	template <typename T>
 	T getValue(uint8_t column) { return *reinterpret_cast<T*>(getValuePtr(column)); }

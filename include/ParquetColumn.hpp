@@ -15,6 +15,7 @@ protected:
 	uint64_t offset_end;
 	uint8_t* mem;
 	uint8_t* mem_end;
+	uint64_t num_values;
 	schema::thrift::ColumnMetaData metadata;
 	schema::SimpleElement* schema;
 	ParquetDictionaryPage* dict_page;
@@ -35,6 +36,7 @@ public:
 	uint64_t getValues(uint8_t* vector, uint64_t num);
 
 	schema::SimpleElement* getSchema() { return schema; }
+	uint64_t numberOfValues() { return num_values; }
 };
 
 

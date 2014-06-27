@@ -41,4 +41,20 @@ ParquetColumn ParquetRowGroup::column(schema::SimpleElement* element) {
 }
 
 
+uint64_t ParquetRowGroup::numberOfValues(schema::SimpleElement* element) {
+	std::vector<std::string> path;
+	element->path(path);
+	for (auto c : metadata.columns) {
+		if (path == c.meta_data.path_in_schema) {
+			uint64_t dict_offset = 0;
+			if (c.meta_data.__isset.dictionary_page_offset) {
+				dict_offset = c.meta_data.dictionary_page_offset;
+			}
+			return c.meta_data.num_values;
+		}
+	}
+	throw Exception("column not found: "+element->name);
+}
+
+
 }

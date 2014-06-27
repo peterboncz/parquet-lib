@@ -35,9 +35,9 @@ void ParquetWriter::initColumns(schema::GroupElement* schemaelement) {
 }
 
 
-uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, std::vector<uint8_t>& r_levels, std::vector<uint8_t>& d_levels) {
+uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, std::vector<uint8_t>& r_levels, std::vector<uint8_t>& d_levels, uint64_t& num_values) {
 	uint64_t rsize = 0;
-	auto num_values = r_levels.size();
+	num_values = r_levels.size();
 	bool omit_r_levels = false;
 	uint8_t* rmem = nullptr;
 	// Bitpacking requires number of values to be a multiple of 8
@@ -133,13 +133,14 @@ void ParquetWriter::writeRowgroup(bool last) {
 		auto dlevel_end = finished_d_levels[col.first].end();
 		uint64_t pagesize = 0;
 		int64_t num_values = 0;
+		uint64_t tmp = 0;
 		while (page_it != page_end) {
-			pagesize += generatePage(outfile, *page_it, col.first, *rlevel_it, *dlevel_it);
-			num_values += int64_t(rlevel_it->size());
+			pagesize += generatePage(outfile, *page_it, col.first, *rlevel_it, *dlevel_it, tmp);
+			num_values += int64_t(tmp);
 			++page_it; ++rlevel_it; ++dlevel_it;
 		}
-		pagesize += generatePage(outfile, col.second, col.first, r_levels[col.first], d_levels[col.first]);
-		num_values += int64_t(r_levels[col.first].size());
+		pagesize += generatePage(outfile, col.second, col.first, r_levels[col.first], d_levels[col.first], tmp);
+		num_values += int64_t(tmp);
 		colmeta.__set_total_compressed_size(pagesize);
 		colmeta.__set_total_uncompressed_size(pagesize);
 		colmeta.__set_num_values(num_values);

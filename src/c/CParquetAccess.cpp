@@ -88,7 +88,7 @@ bool pl_readTuples(ParquetReader* parquetreader, void** vectors, long long* coun
 			if (reader->getColumnType(j) == schema::ColumnType::BYTE_ARRAY || reader->getColumnType(j) == schema::ColumnType::FIXED_LEN_BYTE_ARRAY) {
 				if (reader->getValuePtr(j) != nullptr) {
 					char* tmp = new char[reader->getValueSize(j)+1];
-					memcpy(tmp, reader->getValuePtr(j),reader->getValueSize(j));
+					memcpy(tmp, reader->getValuePtr(j), reader->getValueSize(j));
 					tmp[reader->getValueSize(j)] = '\0';
 					*(reinterpret_cast<char**>(vecs[j])) = tmp;
 				}
@@ -113,6 +113,13 @@ bool pl_readTuplesVectorized(ParquetReader* parquetreader, void** vectors, long 
 	uint8_t** vecs = reinterpret_cast<uint8_t**>(vectors);
 	*count = reader->nextVector(vecs, *count);
 	return true;
+}
+
+
+long long pl_countTuples(ParquetReader* parquetreader) {
+	ParquetTupleReader* reader = reinterpret_cast<ParquetTupleReader*>(parquetreader->reader);
+	assert(reader != nullptr);
+	return reader->count();
 }
 
 
