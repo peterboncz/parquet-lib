@@ -103,7 +103,7 @@ std::vector<std::string> readLine(std::ifstream& file) {
 
 void CSVParquetWriter::handleGroup(vsit sit, int32_t id, VecVecSimpleEl::iterator mapit, VecGroupEl::iterator groupit, VecI::iterator idit, VecI::iterator fkit, VecMap::iterator offsetit, VecF::iterator fileit, uint8_t r, uint8_t d) {
 	if (mapit == colmapping.end()) return;
-	std::map<int32_t, int64_t>& m = *offsetit;
+	std::unordered_map<int32_t, int64_t>& m = *offsetit;
 	auto it = m.find(id);
 	if (it == m.end()) {
 		// write null values with parent d_level and return
@@ -169,7 +169,7 @@ void CSVParquetWriter::put(std::string headerfilename) {
 	int32_t* p1 = reinterpret_cast<int32_t*>(buffer);
 	int64_t* p2 = reinterpret_cast<int64_t*>(buffer+sizeof(int32_t));
 	for (auto s : offsetfiles) {
-		std::map<int32_t, int64_t> offsets;
+		std::unordered_map<int32_t, int64_t> offsets;
 		std::ifstream file{s};
 		file.read(buffer, sizeof(int32_t)+sizeof(int64_t));
 		while(!file.eof()) {
@@ -187,6 +187,7 @@ void CSVParquetWriter::put(std::string headerfilename) {
 		files.push_back(new std::ifstream(*fit));
 		++fit;
 	}
+	std::cout << "Finished reading offsets. Beginning to process input files..." << std::endl;
 	uint8_t r = 0, d = 0;
 	std::vector<std::string> cols = readLine(topfile);
 	while (!cols.empty()) {

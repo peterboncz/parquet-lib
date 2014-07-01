@@ -84,6 +84,7 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	delete[] ptrs.first;
 	delete[] rmem;
 	delete[] dmem;
+	delete[] headermem;
 	ptrs.first = ptrs.second = nullptr;
 	return datasize+rsize+dsize+headersize;
 }
@@ -102,6 +103,7 @@ void ParquetWriter::write() {
 	uint32_t meta32 = uint32_t(metasize);
 	outfile.write(reinterpret_cast<char*>(&meta32), 4);
 	outfile.write("PAR1", 4);
+	delete[] metamem;
 	outfile.close();
 }
 
@@ -162,6 +164,7 @@ void ParquetWriter::writeRowgroup(bool last) {
 		r_levels[col.first].clear();
 		d_levels[col.first].clear();
 	}
+	current_rowgroupsize = 0;
 }
 
 
