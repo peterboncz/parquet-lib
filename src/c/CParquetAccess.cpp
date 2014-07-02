@@ -111,7 +111,8 @@ bool pl_readTuplesVectorized(ParquetReader* parquetreader, void** vectors, long 
 	assert(reader != nullptr);
 	int vectorsize = parquetreader->vectorsize;
 	uint8_t** vecs = reinterpret_cast<uint8_t**>(vectors);
-	*count = reader->nextVector(vecs, *count);
+	uint8_t** nullvectors = reinterpret_cast<uint8_t**>(vectors) + vectorsize;
+	*count = reader->nextVector(vecs, *count, nullvectors);
 	return true;
 }
 

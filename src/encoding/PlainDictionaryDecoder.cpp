@@ -26,16 +26,33 @@ uint32_t PlainDictionaryDecoder::getValueSize() {
 }
 
 
-uint64_t PlainDictionaryDecoder::getValues(uint8_t*& vec, uint64_t num) {
+uint64_t PlainDictionaryDecoder::getValues(uint8_t*& vec, uint64_t num, uint8_t* dlevels, uint8_t d, uint8_t*& nullvector) {
 	char** vector = reinterpret_cast<char**>(vec);
 	uint64_t count = 0;
-	while (count < num && id_decoder.get(index)) {
-		uint64_t size = dict->getValueSize(index);
-		*vector = new char[size+1];
-		memcpy(*vector, dict->getValue(index), size);
-		(*vector)[size] = '\0';
-		++vector;
-		++count;
+	if (dlevels) {
+		while (count < num) {
+			if (*dlevels >= d) {
+				 if (!id_decoder.get(index)) break;
+				uint64_t size = dict->getValueSize(index);
+				*vector = new char[size+1];
+				memcpy(*vector, dict->getValue(index), size);
+				(*vector)[size] = '\0';
+				*nullvector = 0;
+			} else *nullvector = 1;
+			++vector;
+			++count;
+			++nullvector;
+			++dlevels;
+		}
+	} else {
+		while (count < num && id_decoder.get(index)) {
+			uint64_t size = dict->getValueSize(index);
+			*vector = new char[size+1];
+			memcpy(*vector, dict->getValue(index), size);
+			(*vector)[size] = '\0';
+			++vector;
+			++count;
+		}
 	}
 	vec += count;
 	return count;

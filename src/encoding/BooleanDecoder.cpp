@@ -27,13 +27,28 @@ bool BooleanDecoder::get() {
 }
 
 
-uint64_t BooleanDecoder::getValues(uint8_t*& vector, uint64_t num) {
+uint64_t BooleanDecoder::getValues(uint8_t*& vector, uint64_t num, uint8_t* dlevels, uint8_t d, uint8_t*& nullvector) {
 	uint64_t count = 0;
-	while(buffer < bufferend && count < num) {
-		*vector = (*buffer << (7-offset)) >> 7;
-		++vector;
-		++count;
-		if (++offset == 8) { buffer++; offset = 0; }
+	if (dlevels) {
+		while(buffer < bufferend && count < num) {
+			if (*dlevels >= d) {
+				*vector = (*buffer << (7-offset)) >> 7;
+				*nullvector = 0;
+				if (++offset == 8) { buffer++; offset = 0; }
+			} else
+				*nullvector = 1;
+			++vector;
+			++count;
+			++nullvector;
+			++dlevels;
+		}
+	} else {
+		while(buffer < bufferend && count < num) {
+			*vector = (*buffer << (7-offset)) >> 7;
+			++vector;
+			++count;
+			if (++offset == 8) { buffer++; offset = 0; }
+		}
 	}
 	return count;
 }

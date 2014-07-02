@@ -25,18 +25,20 @@ protected:
 	std::vector<Levels> levels;
 	const bool virtual_ids, virtual_fks, recursivefks;
 	uint32_t* id_ptr = nullptr;
+	uint32_t cur_id = 0;
 	std::vector<uint32_t*> fk_ptrs;
 	void init(std::vector<ParquetColumn> pcolumns);
 
 	uint8_t cur_r_level = 0;
 	bool flat, allrequired;
+	bool started = false;
 
 public:
 	ParquetTupleReader(ParquetFile* file, std::vector<std::string> column_names, bool virtual_ids=false, bool virtual_fks=false, bool recursivefks=false);
 	ParquetTupleReader(const std::string& filename, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids=false, bool virtual_fks=false, bool recursivefks=false);
 	ParquetTupleReader(ParquetFile* file, std::vector<schema::SimpleElement*> schema_columns, bool virtual_ids=false, bool virtual_fks=false, bool recursivefks=false);
 	bool next();
-	uint64_t nextVector(uint8_t** vectors, uint64_t num_values);
+	uint64_t nextVector(uint8_t** vectors, uint64_t num_values, uint8_t** nullvectors);
 	uint64_t count();
 	uint8_t* getValuePtr(uint8_t column);
 	template <typename T>

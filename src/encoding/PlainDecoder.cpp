@@ -19,13 +19,27 @@ uint8_t* PlainDecoder::nextValue() {
 }
 
 
-uint64_t PlainDecoder::getValues(uint8_t*& vector, uint64_t num) {
-	if (buffer >= bufferend) return 0;
-	num = std::min(uint64_t((bufferend-buffer)/value_size), num);
-	memcpy(vector, buffer, num*value_size);
-	vector += num*value_size;
-	buffer += num*value_size;
-	return num;
+uint64_t PlainDecoder::getValues(uint8_t*& vector, uint64_t num, uint8_t* dlevels, uint8_t d, uint8_t*& nullvector) {
+	if (dlevels) {
+		for (uint64_t i=0; i < num; ++i) {
+			if (*dlevels >= d) {
+				memcpy(vector, buffer, value_size);
+				buffer += value_size;
+				*nullvector = 0;
+			} else *nullvector = 1;
+			vector += value_size;
+			++dlevels;
+			++nullvector;
+		}
+		return num;
+	} else {
+		if (buffer >= bufferend) return 0;
+		num = std::min(uint64_t((bufferend-buffer)/value_size), num);
+		memcpy(vector, buffer, num*value_size);
+		vector += num*value_size;
+		buffer += num*value_size;
+		return num;
+	}
 }
 
 

@@ -143,17 +143,45 @@ TEST(ParquetTupleReaderTest, NonFlatColumnsRepetition) {
 
 TEST(ParquetTupleReaderTest, Vectorized) {
 	ParquetFile file(std::string("testdata/simpleint.parquet"));
-	ParquetTupleReader reader(&file, {string("field1"),string("field2")});
+	ParquetTupleReader reader(&file, {string("field1"),string("field2")}, true);
 	int64_t* vec_field1 = new int64_t[4];
 	int64_t* vec_field2 = new int64_t[4];
-	uint8_t** vectors = new uint8_t*[2];
+	uint32_t* vec_id = new uint32_t[4];
+	uint8_t** vectors = new uint8_t*[3];
+	uint8_t** nullvectors = new uint8_t*[3];
 	vectors[0] = reinterpret_cast<uint8_t*>(vec_field1);
 	vectors[1] = reinterpret_cast<uint8_t*>(vec_field2);
-	ASSERT_EQ(4, reader.nextVector(vectors, 4));
+	vectors[2] = reinterpret_cast<uint8_t*>(vec_id);
+	nullvectors[0] = nullvectors[1] = nullvectors[2] = nullptr;
+	ASSERT_EQ(4, reader.nextVector(vectors, 4, nullvectors));
 	for (int64_t i=1; i <= 4; ++i) {
 		ASSERT_EQ(i, vec_field1[i-1]);
 		ASSERT_EQ(i*2, vec_field2[i-1]);
+		ASSERT_EQ(i, vec_id[i-1]);
 	}
-	ASSERT_EQ(0, reader.nextVector(vectors, 4));
+	ASSERT_EQ(0, reader.nextVector(vectors, 4, nullvectors));
+}
+
+
+
+TEST(ParquetTupleReaderTest, VectorizedNull) {
+	ParquetFile file(std::string("testdata/nested-null.parquet"));
+	ParquetTupleReader reader(&file, {string("mp.map.key"),string("mp.map.value")});
+	char** vec_field1 = new char*[4];
+	char** vec_field2 = new char*[4];
+	uint8_t* null_field1 = new uint8_t[4];
+	uint8_t* null_field2 = new uint8_t[4];
+	uint8_t** vectors = new uint8_t*[2];
+	uint8_t** nullvectors = new uint8_t*[2];
+	vectors[0] = reinterpret_cast<uint8_t*>(vec_field1);
+	vectors[1] = reinterpret_cast<uint8_t*>(vec_field2);
+	nullvectors[0] = null_field1;
+	nullvectors[1] = null_field2;
+	ASSERT_EQ(2, reader.nextVector(vectors, 4, nullvectors));
+	for (uint i=0; i < 2; i++) {
+		ASSERT_EQ(1, null_field1[i]);
+		ASSERT_EQ(1, null_field2[i]);
+	}
+	ASSERT_EQ(0, reader.nextVector(vectors, 4, nullvectors));
 }
 

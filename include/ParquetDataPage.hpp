@@ -33,7 +33,7 @@ public:
 	uint8_t* nextValue();
 	void nextLevels(uint8_t& r, uint8_t& d);
 	uint32_t getValueSize();
-	uint64_t getValues(uint8_t*& vector, uint64_t num);
+	uint64_t getValues(uint8_t*& vector, uint64_t num, uint8_t*& nullvector);
 
 	uint32_t values_left() { return num_values; }
 };

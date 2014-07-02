@@ -49,10 +49,6 @@ void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 		valuesizes.push_back(0);
 		schemas.push_back(col.getSchema());
 		max_levels.push_back({col.getSchema()->r_level, col.getSchema()->d_level});
-		uint8_t r, d;
-		col.nextLevels(r, d);
-		levels.push_back({r, d});
-		//levels.push_back({0, 0});
 		columns.push_back(std::move(col));
 	}
 	if (virtual_ids) {
@@ -77,6 +73,14 @@ void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 
 
 bool ParquetTupleReader::next() {
+	if (!started) {
+		started = true;
+		uint8_t r, d;
+		for (auto& col : columns) {
+			col.nextLevels(r, d);
+			levels.push_back({r, d});
+		}
+	}
 	uint8_t* ptr;
 	auto values_it = values.begin();
 	auto valuesizes_it = valuesizes.begin();
@@ -126,12 +130,11 @@ bool ParquetTupleReader::next() {
 }
 
 
-uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values) {
+uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, uint8_t** nullvectors) {
 	assert(flat);
-	assert(allrequired);
 	uint64_t count = 0;
 	for (auto& col : columns) {
-		count = col.getValues(*(vectors++), num_values);
+		count = col.getValues(*(vectors++), num_values, *(nullvectors++));
 		if (count == 0) {
 			if (current_rowgroup+1 < file->numberOfRowgroups()) {
 				ParquetRowGroup rowgroup = file->rowgroup(++current_rowgroup);
@@ -143,9 +146,17 @@ uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values) 
 					levels[index] = {r, d};
 					columns[index++] = std::move(col);
 				}
-				return nextVector(vectors-1, num_values);
+				return nextVector(vectors-1, num_values, nullvectors-1);
 			} else return 0;
 		}
+	}
+	if (virtual_ids) {
+		uint32_t* idvec = reinterpret_cast<uint32_t*>(*vectors);
+		for (uint32_t i=1; i<= count; ++i) {
+			*idvec = cur_id+i;
+			++idvec;
+		}
+		cur_id += count;
 	}
 	return count;
 }
