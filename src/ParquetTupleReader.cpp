@@ -139,11 +139,8 @@ uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, 
 			if (current_rowgroup+1 < file->numberOfRowgroups()) {
 				ParquetRowGroup rowgroup = file->rowgroup(++current_rowgroup);
 				uint index = 0;
-				uint8_t r, d;
 				for (auto* scol : schema_columns) {
 					ParquetColumn col = rowgroup.column(scol);
-					col.nextLevels(r, d);
-					levels[index] = {r, d};
 					columns[index++] = std::move(col);
 				}
 				return nextVector(vectors-1, num_values, nullvectors-1);

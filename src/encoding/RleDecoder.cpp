@@ -26,7 +26,7 @@ RleDecoder::RleDecoder(uint8_t* buffer, uint64_t& maxsize, uint8_t bitwidth, uin
 	maxsize = len+4;
 	this->bufferend = buffer+4+len;
 	this->bitwidth = bitwidth;
-	readValues();
+	//readValues();
 }
 
 
@@ -36,17 +36,19 @@ RleDecoder::RleDecoder(uint8_t* buffer, uint8_t* bufferend, uint8_t bitwidth, ui
 	this->buffer = buffer;
 	this->bitwidth = bitwidth;
 	this->bufferend = bufferend;
-	readValues();
+	//readValues();
 }
 
 
 bool RleDecoder::get(uint8_t& val) {
+	if (!read) readValues();
 	val = *(valptr++);
 	return num_values-- > 0;
 }
 
 
 uint64_t RleDecoder::get(uint8_t*& vector, uint64_t count) {
+	if (!read) readValues();
 	vector = valptr;
 	count = std::min(num_values, count);
 	num_values -= count;
@@ -55,6 +57,7 @@ uint64_t RleDecoder::get(uint8_t*& vector, uint64_t count) {
 
 
 uint8_t RleDecoder::peek() {
+	if (!read) readValues();
 	return *(valptr+1);
 }
 
@@ -281,6 +284,7 @@ void RleDecoder::readBitpack(uint64_t count) {
 
 
 void RleDecoder::readValues() {
+	read = true;
 	assert(num_values > 0);
 	valptr = values = new uint8_t[num_values+(num_values%8!=0?8-num_values%8:0)]; // round up to next 8
 	while (buffer < bufferend) {

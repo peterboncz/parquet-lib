@@ -130,6 +130,14 @@ int pl_readerNumColumns(void* parquetreader) {
 }
 
 
+void pl_cleanup(ParquetReader* parquetreader) {
+	ParquetTupleReader* reader = reinterpret_cast<ParquetTupleReader*>(parquetreader->reader);
+	ParquetFile* file = reinterpret_cast<ParquetFile*>(parquetreader->parquetfile);
+	delete reader;
+	delete file;
+}
+
+
 ParquetType pl_column_getType(void* schemacol) {
 	auto* col = reinterpret_cast<schema::SimpleElement*>(schemacol);
 	return ParquetType(static_cast<uint8_t>(col->type));

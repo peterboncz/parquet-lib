@@ -99,7 +99,10 @@ uint64_t ParquetColumn::getValues(uint8_t* vector, uint64_t num, uint8_t* nullve
 	while (count < num && cur_page != nullptr) {
 		if (cur_page->values_left() == 0) nextPage();
 		if (cur_page == nullptr) return count;
-		count += cur_page->getValues(vector, num-count, nullvector);
+		uint64_t tmp = cur_page->getValues(vector, num-count, nullvector);
+		if (tmp == 0) nextPage();
+		if (cur_page == nullptr) return count;
+		count += tmp;
 	}
 	return count;
 }

@@ -52,6 +52,9 @@ ParquetReader* pl_createTupleReader(void* parquetfile, void** columns, int numco
 int pl_readerNumColumns(void* parquetreader);
 
 
+void pl_cleanup(ParquetReader* parquetreader);
+
+
 ParquetType pl_column_getType(void* schemacol);
 
 const char* pl_column_getName(void* schemacol);

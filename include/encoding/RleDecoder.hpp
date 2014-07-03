@@ -10,6 +10,7 @@ namespace encoding {
 
 class RleDecoder : public Decoder {
 private:
+	bool read = false;
 	uint8_t* buffer;
 	uint8_t* bufferend;
 	uint64_t num_values;
