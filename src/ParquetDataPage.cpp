@@ -87,7 +87,7 @@ uint32_t ParquetDataPage::getValueSize() {
 }
 
 
-uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nullvector) {
+uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nullvector, uint32_t*& fkvector, uint32_t& fk) {
 	if (num_values == 0) return 0;
 	uint8_t* d_levels = nullptr;
 	uint64_t dnum = num;
@@ -95,6 +95,27 @@ uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nu
 		dnum = d_decoder.get(d_levels, num);
 		if (dnum == 0) exit(0); //return 0;
 		num = dnum;
+	}
+	if (fkvector != nullptr) {
+		uint8_t* rlevels = nullptr, *dlevels = nullptr;
+		uint64_t count = 0;
+		uint64_t dnum = num;
+		count = r_decoder.get(rlevels, num);
+		if (d_levels == nullptr) dnum = d_decoder.get(dlevels, num);
+		else {
+			dlevels = d_levels;
+			dnum = num;
+		}
+		assert(count == dnum);
+		for (uint64_t i=0; i < num; ++i) {
+			if (*dlevels >= schema->d_level) { // check if column is null
+				if (*rlevels < schema->r_level) ++fk;
+				*fkvector = fk;
+				++fkvector;
+			}
+			++dlevels;
+			++rlevels;
+		}
 	}
 	uint64_t count = data_decoder->getValues(vector, num, d_levels, schema->d_level, nullvector);
 	if (num_values < count) assert(false);

@@ -33,7 +33,7 @@ public:
 	bool nextValue(uint8_t*& ptr);
 	void nextLevels(uint8_t& r, uint8_t& d);
 
-	uint64_t getValues(uint8_t* vector, uint64_t num, uint8_t* nullvector);
+	uint64_t getValues(uint8_t* vector, uint64_t num, uint8_t* nullvector, uint32_t* fkvector, uint32_t& fk);
 
 	schema::SimpleElement* getSchema() { return schema; }
 	uint64_t numberOfValues() { return num_values; }

@@ -185,3 +185,32 @@ TEST(ParquetTupleReaderTest, VectorizedNull) {
 	ASSERT_EQ(0, reader.nextVector(vectors, 4, nullvectors));
 }
 
+
+TEST(ParquetTupleReaderTest, VectorizedFk) {
+	ParquetFile file(std::string("testdata/nested-group-required-child.parquet"));
+	ParquetTupleReader reader(&file, {string("Links.linkid"),string("Links.ref")}, false, true);
+
+	int64_t* vec_field1 = new int64_t[3];
+	int64_t* vec_field2 = new int64_t[3];
+	uint32_t* vec_fk = new uint32_t[3];
+	uint8_t** vectors = new uint8_t*[3];
+	uint8_t** nullvectors = new uint8_t*[3];
+	vectors[0] = reinterpret_cast<uint8_t*>(vec_field1);
+	vectors[1] = reinterpret_cast<uint8_t*>(vec_field2);
+	vectors[2] = reinterpret_cast<uint8_t*>(vec_fk);
+	nullvectors[0] = nullvectors[1] = nullvectors[2] = nullptr;
+	for (int64_t i=0; i < 5; ++i) {
+		ASSERT_EQ(3, reader.nextVector(vectors, 3, nullvectors));
+		ASSERT_EQ(1, vec_field1[0]);
+		ASSERT_EQ(2, vec_field1[1]);
+		ASSERT_EQ(3, vec_field1[2]);
+		ASSERT_EQ(100, vec_field2[0]);
+		ASSERT_EQ(101, vec_field2[1]);
+		ASSERT_EQ(102, vec_field2[2]);
+		ASSERT_EQ(i+1, vec_fk[0]);
+		ASSERT_EQ(i+1, vec_fk[1]);
+		ASSERT_EQ(i+1, vec_fk[2]);
+	}
+	ASSERT_EQ(0, reader.nextVector(vectors, 3, nullvectors));
+}
+

@@ -93,13 +93,13 @@ uint32_t ParquetColumn::getValueSize() {
 }
 
 
-uint64_t ParquetColumn::getValues(uint8_t* vector, uint64_t num, uint8_t* nullvector) {
+uint64_t ParquetColumn::getValues(uint8_t* vector, uint64_t num, uint8_t* nullvector, uint32_t* fkvector, uint32_t& fk) {
 	if (cur_page == nullptr) return 0;
-	uint64_t count = cur_page->getValues(vector, num, nullvector);
+	uint64_t count = cur_page->getValues(vector, num, nullvector, fkvector, fk);
 	while (count < num && cur_page != nullptr) {
 		if (cur_page->values_left() == 0) nextPage();
 		if (cur_page == nullptr) return count;
-		uint64_t tmp = cur_page->getValues(vector, num-count, nullvector);
+		uint64_t tmp = cur_page->getValues(vector, num-count, nullvector, fkvector, fk);
 		if (tmp == 0) nextPage();
 		if (cur_page == nullptr) return count;
 		count += tmp;

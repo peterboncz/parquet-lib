@@ -26,6 +26,7 @@ protected:
 	const bool virtual_ids, virtual_fks, recursivefks;
 	uint32_t* id_ptr = nullptr;
 	uint32_t cur_id = 0;
+	uint32_t cur_fk = 0;
 	std::vector<uint32_t*> fk_ptrs;
 	void init(std::vector<ParquetColumn> pcolumns);
 

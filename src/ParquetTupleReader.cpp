@@ -133,8 +133,27 @@ bool ParquetTupleReader::next() {
 uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, uint8_t** nullvectors) {
 	assert(flat);
 	uint64_t count = 0;
+	uint32_t* fkvector = nullptr;
+	int fkindex = -1;
+	if (virtual_fks) {
+		if (virtual_ids) fkvector = reinterpret_cast<uint32_t*>(*(vectors+columns.size()+1));
+		else fkvector = reinterpret_cast<uint32_t*>(*(vectors+columns.size()));
+		uint i = 0;
+		for (auto& col : columns) {
+			if (col.getSchema()->repetition == schema::RepetitionType::REQUIRED) {
+				fkindex = i;
+				break;
+			}
+			++i;
+		}
+		assert(fkindex >= 0);
+	}
+	uint i = 0;
 	for (auto& col : columns) {
-		count = col.getValues(*(vectors++), num_values, *(nullvectors++));
+		if (i == fkindex)
+			count = col.getValues(*(vectors++), num_values, *(nullvectors++), fkvector, cur_fk);
+		else
+			count = col.getValues(*(vectors++), num_values, *(nullvectors++), nullptr, cur_fk);
 		if (count == 0) {
 			if (current_rowgroup+1 < file->numberOfRowgroups()) {
 				ParquetRowGroup rowgroup = file->rowgroup(++current_rowgroup);
@@ -146,6 +165,7 @@ uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, 
 				return nextVector(vectors-1, num_values, nullvectors-1);
 			} else return 0;
 		}
+		++i;
 	}
 	if (virtual_ids) {
 		uint32_t* idvec = reinterpret_cast<uint32_t*>(*vectors);
