@@ -13,7 +13,7 @@ protected:
 	void putMessage(StringVector path, const rapidjson::Value& object, schema::GroupElement* schemaelement, uint8_t r, uint8_t d);
 	void put(const rapidjson::Document& document);
 public:
-	JsonParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize=STANDARD_PAGESIZE);
+	JsonParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize=STANDARD_PAGESIZE, util::CompressionCodec compression = util::CompressionCodec::UNCOMPRESSED);
 	void put(const std::string& jsonfile);
 };
 

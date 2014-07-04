@@ -166,3 +166,26 @@ TEST_F(ParquetWriterTest, BigFile) {
 	ASSERT_FALSE(reader.next());
 }
 
+
+TEST_F(ParquetWriterTest, BigFileCompressed) {
+	{
+		SchemaParser parser("testdata/schema/simpleint.schema");
+		GroupElement* schema = parser.parseSchema();
+		JsonParquetWriter w(schema, "testdata/out.parquet", STANDARD_PAGESIZE, util::CompressionCodec::SNAPPY);
+		for (int i=0; i < 20000; i++)
+			w.put("testdata/json/simpleint.json");
+		w.write();
+	}
+	ParquetFile file(std::string("testdata/out.parquet"));
+	Element* schema = file.getSchema();
+	ParquetTupleReader reader(&file, {string("field1"),string("field2")});
+	for (int j=0; j < 20000; j++) {
+		for (uint64_t i=1; i <= 4; i++) {
+			ASSERT_TRUE(reader.next());
+			ASSERT_EQ(i, reader.getValue<uint64_t>(0));
+			ASSERT_EQ(i*2, reader.getValue<uint64_t>(1));
+		}
+	}
+	ASSERT_FALSE(reader.next());
+}
+

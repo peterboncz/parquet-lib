@@ -12,8 +12,8 @@ namespace parquetbase {
 namespace writer {
 
 
-JsonParquetWriter::JsonParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize)
-		: ParquetWriter(schema, filename, pagesize) {}
+JsonParquetWriter::JsonParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize, util::CompressionCodec compression)
+		: ParquetWriter(schema, filename, pagesize, compression) {}
 
 
 void JsonParquetWriter::put(const rapidjson::Document& document) {

@@ -12,11 +12,17 @@ namespace parquetbase {
 namespace writer {
 
 
-ParquetWriter::ParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize)
+ParquetWriter::ParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize, util::CompressionCodec compression)
 		: filemeta(new schema::thrift::FileMetaData()), outfile(filename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc),
-			maximum_pagesize(pagesize), filename(filename), schema(schema), columns(), r_levels(), d_levels() {
+			compression(compression), maximum_pagesize(pagesize), filename(filename), schema(schema), columns(), r_levels(), d_levels() {
 	initColumns(schema);
+	buffer = new uint8_t[2*pagesize];
 	outfile.write("PAR1", 4); // magic number at beginning of file
+}
+
+
+ParquetWriter::~ParquetWriter() {
+	delete[] buffer;
 }
 
 
@@ -35,7 +41,7 @@ void ParquetWriter::initColumns(schema::GroupElement* schemaelement) {
 }
 
 
-uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, std::vector<uint8_t>& r_levels, std::vector<uint8_t>& d_levels, uint64_t& num_values) {
+uint64_t ParquetWriter::generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, std::vector<uint8_t>& r_levels, std::vector<uint8_t>& d_levels, uint64_t& num_values) {
 	uint64_t rsize = 0;
 	num_values = r_levels.size();
 	bool omit_r_levels = false;
@@ -63,6 +69,16 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	} else
 		dmem = encoding::encodeRle(d_levels, util::bitwidth(schema->d_level), dsize);
 	uint64_t datasize = ptrs.second - ptrs.first;
+	uint8_t* compressed_mem = nullptr;
+	uint64_t compressed_size = rsize+dsize+datasize;
+	if (compression != util::CompressionCodec::UNCOMPRESSED) {
+		assert(rsize+dsize+datasize <= 2*maximum_pagesize);
+		memcpy(buffer, rmem, rsize);
+		memcpy(buffer+rsize, dmem, dsize);
+		memcpy(buffer+rsize+dsize, ptrs.first, datasize);
+		compressed_mem = util::compress(buffer, rsize+dsize+datasize, compressed_size, compression);
+		assert(compressed_mem != nullptr);
+	}
 
 	schema::thrift::DataPageHeader dph;
 	dph.__set_encoding(schema::thrift::Encoding::PLAIN);
@@ -73,20 +89,25 @@ uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::
 	ph.__set_data_page_header(dph);
 	ph.__set_type(schema::thrift::PageType::DATA_PAGE);
 	ph.__set_uncompressed_page_size(int32_t(datasize+rsize+dsize));
-	ph.__set_compressed_page_size(int32_t(datasize+rsize+dsize));
+	ph.__set_compressed_page_size(int32_t(compressed_size));
 	uint64_t headersize = 0;
 	uint8_t* headermem = util::thrift_serialize(ph, headersize);
 
 	out.write(reinterpret_cast<char*>(headermem), headersize);
-	if (!omit_r_levels) out.write(reinterpret_cast<char*>(rmem), rsize);
-	if (!omit_d_levels) out.write(reinterpret_cast<char*>(dmem), dsize);
-	out.write(reinterpret_cast<char*>(ptrs.first), datasize);
+	if (compression == util::CompressionCodec::UNCOMPRESSED) {
+		if (!omit_r_levels) out.write(reinterpret_cast<char*>(rmem), rsize);
+		if (!omit_d_levels) out.write(reinterpret_cast<char*>(dmem), dsize);
+		out.write(reinterpret_cast<char*>(ptrs.first), datasize);
+	} else {
+		out.write(reinterpret_cast<char*>(compressed_mem), compressed_size);
+	}
+	if (compressed_mem != nullptr) delete[] compressed_mem;
 	delete[] ptrs.first;
 	delete[] rmem;
 	delete[] dmem;
 	delete[] headermem;
 	ptrs.first = ptrs.second = nullptr;
-	return datasize+rsize+dsize+headersize;
+	return compressed_size+headersize;
 }
 
 
@@ -104,6 +125,7 @@ void ParquetWriter::write() {
 	outfile.write(reinterpret_cast<char*>(&meta32), 4);
 	outfile.write("PAR1", 4);
 	delete[] metamem;
+	delete filemeta;
 	outfile.close();
 }
 
@@ -120,7 +142,7 @@ void ParquetWriter::writeRowgroup(bool last) {
 		col.first->path(path_in_schema);
 		colmeta.__set_path_in_schema(path_in_schema);
 		colmeta.__set_type(schema::unmap(col.first->type));
-		colmeta.__set_codec(schema::thrift::CompressionCodec::UNCOMPRESSED);
+		colmeta.__set_codec(compression);
 		colmeta.__set_num_values(d_levels[col.first].size());
 		colmeta.__set_encodings(encodings);
 		long pos = outfile.tellp();

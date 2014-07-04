@@ -29,7 +29,7 @@ protected:
 	void putNull(const std::vector<schema::SimpleElement*>& mapping, uint8_t r, uint8_t d);
 	void handleGroup(vsit sit, int32_t id, VecVecSimpleEl::iterator mapit, VecGroupEl::iterator groupit, VecI::iterator idit, VecI::iterator fkit, VecMap::iterator offsetit, VecF::iterator fileit, uint8_t r, uint8_t d);
 public:
-	CSVParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize=STANDARD_PAGESIZE);
+	CSVParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize=STANDARD_PAGESIZE, util::CompressionCodec compression = util::CompressionCodec::UNCOMPRESSED);
 	void put(std::string headerfilename);
 };
 

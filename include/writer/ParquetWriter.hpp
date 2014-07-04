@@ -4,6 +4,7 @@
 #include <fstream>
 #include "parquet_types.h"
 #include "schema/ParquetSchema.hpp"
+#include "util/Compression.hpp"
 
 
 namespace parquetbase {
@@ -24,6 +25,7 @@ protected:
 	std::vector<schema::thrift::RowGroup> rowgroups;
 	schema::thrift::FileMetaData* filemeta;
 	std::ofstream outfile;
+	util::CompressionCodec compression;
 	const uint64_t maximum_pagesize;
 	std::string filename;
 	schema::GroupElement* schema;
@@ -34,13 +36,15 @@ protected:
 	Levels d_levels;
 	uint64_t num_rows = 0, num_rows_group = 0;
 	uint64_t current_rowgroupsize = 0;
-
+	uint8_t* buffer;
+	uint64_t generatePage(std::ofstream& out, ParquetWriter::PtrPair& ptrs, schema::SimpleElement* schema, std::vector<uint8_t>& r_levels, std::vector<uint8_t>& d_levels, uint64_t& num_values);
 	void initColumns(schema::GroupElement* schemaelement);
 	void changePageIf(schema::SimpleElement* column, uint64_t size);
 	void newRow();
 	void writeRowgroup(bool last=false);
 public:
-	ParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize=STANDARD_PAGESIZE);
+	ParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize=STANDARD_PAGESIZE, util::CompressionCodec compression = util::CompressionCodec::UNCOMPRESSED);
+	~ParquetWriter();
 	void write();
 };
 

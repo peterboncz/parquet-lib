@@ -16,8 +16,8 @@ static const std::string BOOLEAN_VALUE = "Y";
 
 
 
-CSVParquetWriter::CSVParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize)
-		: ParquetWriter(schema, filename, pagesize) {}
+CSVParquetWriter::CSVParquetWriter(schema::GroupElement* schema, std::string filename, uint64_t pagesize, util::CompressionCodec compression)
+		: ParquetWriter(schema, filename, pagesize, compression) {}
 
 
 void CSVParquetWriter::put(std::vector<std::string>& cols, const std::vector<schema::SimpleElement*>& mapping, uint8_t r, uint8_t d) {
