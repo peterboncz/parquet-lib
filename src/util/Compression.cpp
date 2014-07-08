@@ -3,6 +3,7 @@
 #include "zlib.h"
 #include "snappy.h"
 #include "lzo/lzo1x.h"
+#include <lzo/lzoutil.h>
 #endif
 
 namespace parquetbase {
@@ -99,9 +100,11 @@ uint8_t* compress(uint8_t* uncompressed_mem, uint64_t uncompressed_size, uint64_
 		snappy::RawCompress(reinterpret_cast<char*>(uncompressed_mem), uncompressed_size, reinterpret_cast<char*>(mem), &compressed_size);
 		return mem;
 	} else if (codec == CompressionCodec::LZO) {
-			uint8_t* mem = new uint8_t[uncompressed_size];
+			uint8_t* mem = new uint8_t[uncompressed_size*2];
+			void* workmem = lzo_malloc(LZO1X_1_MEM_COMPRESS);//new uint8_t[uncompressed_size];
 			lzo_init();
-			auto res = lzo1x_1_compress(reinterpret_cast<const unsigned char*>(uncompressed_mem), uncompressed_size, reinterpret_cast<unsigned char*>(mem), &compressed_size, nullptr);
+			auto res = lzo1x_1_compress(reinterpret_cast<const unsigned char*>(uncompressed_mem), uncompressed_size, reinterpret_cast<unsigned char*>(mem), &compressed_size, workmem);
+			lzo_free(workmem);
 			if (res == LZO_E_OK) return mem;
 			else {
 				delete[] mem;
