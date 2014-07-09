@@ -14,6 +14,16 @@ uint8_t bitwidth(uint8_t val) {
 	return i;
 }
 
+uint8_t bitwidth(int32_t val) {
+	if (val == 0) return 1;
+	uint8_t i = 0;
+	while (val > 0 && i < 32) {
+		i++;
+		val = val >> 1;
+	}
+	return i;
+}
+
 // Based on parquet-common/src/main/java/parquet/bytes/BytesUtils.java
 // from the parquet-mr github repository
 uint64_t vlq(uint8_t*& buffer) {

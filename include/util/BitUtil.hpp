@@ -8,6 +8,8 @@ namespace util {
 
 uint8_t bitwidth(uint8_t val);
 
+uint8_t bitwidth(int32_t val);
+
 uint64_t vlq(uint8_t*& in);
 
 uint8_t* to_vlq(uint64_t x, uint8_t& size);

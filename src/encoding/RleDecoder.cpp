@@ -52,6 +52,7 @@ uint64_t RleDecoder::get(uint8_t*& vector, uint64_t count) {
 	vector = valptr;
 	count = std::min(num_values, count);
 	num_values -= count;
+	valptr += count;
 	return count;
 }
 
