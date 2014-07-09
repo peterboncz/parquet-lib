@@ -25,16 +25,25 @@ uint64_t PlainByteArrayDecoder::getValues(uint8_t*& vec, uint64_t num, uint8_t* 
 	char** vector = reinterpret_cast<char**>(vec);
 	uint64_t count = 0;
 	if (dlevels) {
-		while (count < num) {
+		if (buffer >= bufferend) return 0;
+		uint32_t size = *reinterpret_cast<uint32_t*>(buffer);
+		while (buffer < bufferend && count < num) {
 			if (*dlevels >= d) {
 				if (buffer >= bufferend) return count;
-				uint32_t size = *reinterpret_cast<uint32_t*>(buffer); // first 4 bytes encode number of following bytes
 				buffer+= 4;
-				char* word = new char[size+1];
-				memcpy(word, buffer, size);
-				word[size] = '\0';
-				*vector = word;
-				buffer += size;
+				if (count + 1 < num && buffer + size < bufferend) {
+					uint8_t* tmp = buffer;
+					buffer += size;
+					size = *reinterpret_cast<uint32_t*>(buffer);
+					*buffer = '\0';
+					*vector = reinterpret_cast<char*>(tmp);
+				} else {
+					char* word = new char[size+1];
+					memcpy(word, buffer, size);
+					word[size] = '\0';
+					*vector = word;
+					buffer += size;
+				}
 				*nullvector = 0;
 			} else *nullvector = 1;
 			++vector;
@@ -43,14 +52,24 @@ uint64_t PlainByteArrayDecoder::getValues(uint8_t*& vec, uint64_t num, uint8_t* 
 			++dlevels;
 		}
 	} else {
+		if (buffer >= bufferend) return 0;
+		uint32_t size = *reinterpret_cast<uint32_t*>(buffer);
+		buffer+= 4;
 		while (buffer < bufferend && count < num) {
-			uint32_t size = *reinterpret_cast<uint32_t*>(buffer); // first 4 bytes encode number of following bytes
-			buffer+= 4;
-			char* word = new char[size+1];
-			memcpy(word, buffer, size);
-			word[size] = '\0';
-			*vector = word;
-			buffer += size;
+			if (count + 1 < num && buffer + size < bufferend) {
+				uint8_t* tmp = buffer;
+				buffer += size;
+				size = *reinterpret_cast<uint32_t*>(buffer);
+				*buffer = '\0';
+				buffer+= 4;
+				*vector = reinterpret_cast<char*>(tmp);
+			} else {
+				char* word = new char[size+1];
+				memcpy(word, buffer, size);
+				word[size] = '\0';
+				*vector = word;
+				buffer += size;
+			}
 			++vector;
 			++count;
 		}

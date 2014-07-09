@@ -43,7 +43,7 @@ ParquetFile::ParquetFile(const std::string& filename) : filename(filename) {
 		struct stat st;
 		if (stat(fname.c_str(), &st) == -1) throw Exception("invalid filename: "+fname);
 		file_size = st.st_size;
-		file_mem = reinterpret_cast<uint8_t*>(mmap(0, file_size, PROT_READ, MAP_SHARED, fileno(file_handle), 0));
+		file_mem = reinterpret_cast<uint8_t*>(mmap(0, file_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fileno(file_handle), 0));
 		// check magic number
 		if (memcmp(file_mem, "PAR1", 4) != 0) throw Exception("not a parquet file: "+fname);
 		if (memcmp(file_mem+file_size-4, "PAR1", 4) != 0) throw Exception("not a parquet file: "+fname);

@@ -214,3 +214,23 @@ TEST(ParquetTupleReaderTest, VectorizedFk) {
 	ASSERT_EQ(0, reader.nextVector(vectors, 3, nullvectors));
 }
 
+
+TEST(ParquetTupleReaderTest, VectorizedStrings) {
+	ParquetFile file(std::string("testdata/nation.impala.parquet"));
+	ParquetTupleReader reader(&file, {string("n_name")}, false);
+	char** vec_field = new char*[1024];
+	uint8_t** vectors = new uint8_t*[1];
+	uint8_t** nullvectors = new uint8_t*[1];
+	vectors[0] = reinterpret_cast<uint8_t*>(vec_field);
+	nullvectors[0] = nullptr;
+	std::vector<std::string> names = {"ALGERIA", "ARGENTINA", "BRAZIL", "CANADA",
+			"EGYPT", "ETHIOPIA", "FRANCE", "GERMANY", "INDIA", "INDONESIA", "IRAN",
+			"IRAQ", "JAPAN", "JORDAN", "KENYA", "MOROCCO", "MOZAMBIQUE", "PERU",
+			"CHINA", "ROMANIA", "SAUDI ARABIA", "VIETNAM", "RUSSIA", "UNITED KINGDOM", "UNITED STATES"};
+	ASSERT_EQ(25, reader.nextVector(vectors, 1024, nullvectors));
+	for (int64_t i=0; i < 25; ++i) {
+		ASSERT_EQ(names[i], vec_field[i]);
+	}
+	ASSERT_EQ(0, reader.nextVector(vectors, 1024, nullvectors));
+}
+
