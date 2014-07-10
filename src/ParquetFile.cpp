@@ -13,7 +13,7 @@
 namespace parquetbase {
 
 
-ParquetFile::ParquetFile(const std::string& filename) : filename(filename) {
+ParquetFile::ParquetFile(const std::string& filename, bool preload) : filename(filename) {
 	uint64_t footersize;
 	uint8_t* buf;
 	if (filename.substr(0, 7) == "hdfs://") {
@@ -43,7 +43,9 @@ ParquetFile::ParquetFile(const std::string& filename) : filename(filename) {
 		struct stat st;
 		if (stat(fname.c_str(), &st) == -1) throw Exception("invalid filename: "+fname);
 		file_size = st.st_size;
-		file_mem = reinterpret_cast<uint8_t*>(mmap(0, file_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fileno(file_handle), 0));
+		int flags = MAP_PRIVATE;
+		if (preload) flags = flags | MAP_POPULATE;
+		file_mem = reinterpret_cast<uint8_t*>(mmap(0, file_size, PROT_READ | PROT_WRITE, flags, fileno(file_handle), 0));
 		// check magic number
 		if (memcmp(file_mem, "PAR1", 4) != 0) throw Exception("not a parquet file: "+fname);
 		if (memcmp(file_mem+file_size-4, "PAR1", 4) != 0) throw Exception("not a parquet file: "+fname);
@@ -52,7 +54,6 @@ ParquetFile::ParquetFile(const std::string& filename) : filename(filename) {
 	}
 	filemetadata = util::thrift_deserialize<schema::thrift::FileMetaData>(buf, footersize);
 	schema = schema::generateSchema(filemetadata->schema);
-
 }
 
 

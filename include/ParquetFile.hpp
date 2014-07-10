@@ -40,7 +40,7 @@ protected:
 #endif
 public:
 	uint8_t* file_mem;
-	ParquetFile(const std::string& filename);
+	ParquetFile(const std::string& filename, bool preload=false);
 	~ParquetFile();
 
 	schema::Element* getSchema();// { return schema; }
