@@ -87,13 +87,13 @@ uint32_t ParquetDataPage::getValueSize() {
 }
 
 
-uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nullvector, uint32_t*& fkvector, uint32_t& fk) {
+uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nullvector, uint64_t*& fkvector, uint64_t& fk) {
 	if (num_values == 0) return 0;
 	uint8_t* d_levels = nullptr;
 	uint64_t dnum = num;
 	if (nullvector != nullptr && !omit_d_levels) {
 		dnum = d_decoder.get(d_levels, num);
-		if (dnum == 0) exit(0); //return 0;
+		assert(dnum != 0);
 		num = dnum;
 	}
 	if (fkvector != nullptr) {
@@ -107,6 +107,7 @@ uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nu
 			dnum = num;
 		}
 		assert(count == dnum);
+		num = count;
 		for (uint64_t i=0; i < num; ++i) {
 			if (*dlevels >= schema->d_level) { // check if column is null
 				if (*rlevels < schema->r_level) ++fk;

@@ -133,11 +133,11 @@ bool ParquetTupleReader::next() {
 uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, uint8_t** nullvectors) {
 	assert(flat);
 	uint64_t count = 0;
-	uint32_t* fkvector = nullptr;
+	uint64_t* fkvector = nullptr;
 	int fkindex = -1;
 	if (virtual_fks) {
-		if (virtual_ids) fkvector = reinterpret_cast<uint32_t*>(*(vectors+columns.size()+1));
-		else fkvector = reinterpret_cast<uint32_t*>(*(vectors+columns.size()));
+		if (virtual_ids) fkvector = reinterpret_cast<uint64_t*>(*(vectors+columns.size()+1));
+		else fkvector = reinterpret_cast<uint64_t*>(*(vectors+columns.size()));
 		uint i = 0;
 		for (auto& col : columns) {
 			if (col.getSchema()->repetition == schema::RepetitionType::REQUIRED) {
@@ -168,8 +168,8 @@ uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, 
 		++i;
 	}
 	if (virtual_ids) {
-		uint32_t* idvec = reinterpret_cast<uint32_t*>(*vectors);
-		for (uint32_t i=1; i<= count; ++i) {
+		uint64_t* idvec = reinterpret_cast<uint64_t*>(*vectors);
+		for (uint64_t i=1; i<= count; ++i) {
 			*idvec = cur_id+i;
 			++idvec;
 		}

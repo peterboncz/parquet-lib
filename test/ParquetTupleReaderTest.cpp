@@ -146,7 +146,7 @@ TEST(ParquetTupleReaderTest, Vectorized) {
 	ParquetTupleReader reader(&file, {string("field1"),string("field2")}, true);
 	int64_t* vec_field1 = new int64_t[4];
 	int64_t* vec_field2 = new int64_t[4];
-	uint32_t* vec_id = new uint32_t[4];
+	uint64_t* vec_id = new uint64_t[4];
 	uint8_t** vectors = new uint8_t*[3];
 	uint8_t** nullvectors = new uint8_t*[3];
 	vectors[0] = reinterpret_cast<uint8_t*>(vec_field1);
@@ -192,7 +192,7 @@ TEST(ParquetTupleReaderTest, VectorizedFk) {
 
 	int64_t* vec_field1 = new int64_t[3];
 	int64_t* vec_field2 = new int64_t[3];
-	uint32_t* vec_fk = new uint32_t[3];
+	uint64_t* vec_fk = new uint64_t[3];
 	uint8_t** vectors = new uint8_t*[3];
 	uint8_t** nullvectors = new uint8_t*[3];
 	vectors[0] = reinterpret_cast<uint8_t*>(vec_field1);

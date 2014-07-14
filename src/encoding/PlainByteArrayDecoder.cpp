@@ -1,6 +1,7 @@
 #include "encoding/PlainByteArrayDecoder.hpp"
 #include <cstring>
 #include <iostream>
+#include <cassert>
 
 namespace parquetbase {
 namespace encoding {
@@ -25,11 +26,10 @@ uint64_t PlainByteArrayDecoder::getValues(uint8_t*& vec, uint64_t num, uint8_t* 
 	char** vector = reinterpret_cast<char**>(vec);
 	uint64_t count = 0;
 	if (dlevels) {
-		if (buffer >= bufferend) return 0;
 		uint32_t size = *reinterpret_cast<uint32_t*>(buffer);
-		while (buffer < bufferend && count < num) {
+		while (buffer < bufferend || count < num) {
 			if (*dlevels >= d) {
-				if (buffer >= bufferend) return count;
+				assert(buffer < bufferend);
 				buffer+= 4;
 				if (count + 1 < num && buffer + size < bufferend) {
 					uint8_t* tmp = buffer;
