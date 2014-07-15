@@ -88,39 +88,58 @@ uint32_t ParquetDataPage::getValueSize() {
 
 
 uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nullvector, uint64_t*& fkvector, uint64_t& fk) {
+	assert(num > 0);
 	if (num_values == 0) return 0;
 	uint8_t* d_levels = nullptr;
-	uint64_t dnum = num;
+	uint64_t fkcount = 0;
 	if (nullvector != nullptr && !omit_d_levels) {
-		dnum = d_decoder.get(d_levels, num);
-		assert(dnum != 0);
-		num = dnum;
+		num = d_decoder.get(d_levels, num);
+		assert(num != 0);
 	}
+	bool dofk = false;
 	if (fkvector != nullptr) {
-		uint8_t* rlevels = nullptr, *dlevels = nullptr;
+		dofk = true;
 		uint64_t count = 0;
-		uint64_t dnum = num;
-		count = r_decoder.get(rlevels, num);
-		if (d_levels == nullptr) dnum = d_decoder.get(dlevels, num);
-		else {
-			dlevels = d_levels;
-			dnum = num;
-		}
-		assert(count == dnum);
-		num = count;
-		for (uint64_t i=0; i < num; ++i) {
-			if (*dlevels >= schema->d_level) { // check if column is null
-				if (*rlevels < schema->r_level) ++fk;
+		uint64_t rcount = 0;
+		uint8_t*& rlevels = r_decoder.ptr();
+		uint8_t*& dlevels = d_decoder.ptr();
+		while(count < num && rcount < num_values) {
+			if (*dlevels >= schema->d_level) {
+				if (*rlevels < schema->r_level)
+					++fk;
 				*fkvector = fk;
 				++fkvector;
+				++count;
 			}
+			++rcount;
 			++dlevels;
 			++rlevels;
 		}
+		d_decoder.usedvalues(rcount);
+		r_decoder.usedvalues(rcount);
+		/*
+		uint8_t r, d;
+		uint64_t count = 0;
+		uint64_t rcount = 0;
+		while(count < num && d_decoder.get(d) && r_decoder.get(r)) {
+			++rcount;
+			if (d >= schema->d_level) {
+				if (r < schema->r_level)
+					++fk;
+				*fkvector = fk;
+				++fkvector;
+				++count;
+			}
+		}
+		*/
+		num = count;
+		num_values -= rcount;
 	}
 	uint64_t count = data_decoder->getValues(vector, num, d_levels, schema->d_level, nullvector);
-	if (num_values < count) assert(false);
-	else num_values -= count;
+	if (!dofk) {
+		assert(num_values >= count);
+		num_values -= count;
+	}
 	return count;
 }
 

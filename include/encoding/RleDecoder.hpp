@@ -36,6 +36,8 @@ public:
 	bool get(uint8_t& val);
 	uint64_t get(uint8_t*& vector, uint64_t count);
 	uint8_t peek();
+	uint8_t*& ptr() { if (!read) readValues(); return valptr; }
+	void usedvalues(uint64_t num) { num_values -= num; }
 	uint8_t* nextValue() { return nullptr; }
 	uint32_t getValueSize() { return 0; }
 	uint64_t getValues(uint8_t*& vector, uint64_t num, uint8_t* dlevels, uint8_t d, uint8_t*& nullvector) { return 0; };
