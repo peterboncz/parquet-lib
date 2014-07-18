@@ -1,0 +1,10 @@
+message issue {
+    required int32 volume;
+    required int32 number;
+    repeated group articles {
+        required binary title;
+        required int32 initPage;
+        required int32 endPage;
+        repeated binary authors;
+    }
+}

@@ -4,6 +4,7 @@
 #include <vector>
 #include "gtest/gtest.h"
 #include "writer/JsonParquetWriter.hpp"
+#include "writer/XmlParquetWriter.hpp"
 #include "ParquetFile.hpp"
 #include "ParquetTupleReader.hpp"
 #include "schema/parser/SchemaParser.hpp"
@@ -187,5 +188,30 @@ TEST_F(ParquetWriterTest, BigFileCompressed) {
 		}
 	}
 	ASSERT_FALSE(reader.next());
+}
+
+
+TEST_F(ParquetWriterTest, Xml) {
+	{
+		SchemaParser parser("testdata/schema/sigmod.schema");
+		GroupElement* schema = parser.parseSchema();
+		XmlParquetWriter w(schema, "testdata/out.parquet");
+		w.put("testdata/xml/sigmod.xml");
+		w.write();
+	}
+	ParquetFile file(std::string("testdata/out.parquet"));
+	ParquetTupleReader reader(&file, {string("volume"),string("number")});
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(11, reader.getValue<int32_t>(0));
+	ASSERT_EQ(1, reader.getValue<int32_t>(1));
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(11, reader.getValue<int32_t>(0));
+	ASSERT_EQ(3, reader.getValue<int32_t>(1));
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(11, reader.getValue<int32_t>(0));
+	ASSERT_EQ(4, reader.getValue<int32_t>(1));
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(12, reader.getValue<int32_t>(0));
+	ASSERT_EQ(1, reader.getValue<int32_t>(1));
 }
 

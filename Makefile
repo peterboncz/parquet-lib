@@ -44,7 +44,7 @@ bin_dir := bin/
 build_dir = @mkdir -p $(dir $@)
 
 
-all: bin/tester bin/json2parquet bin/csv2parquet bin/compression
+all: bin/tester bin/json2parquet bin/csv2parquet bin/compression bin/xml2parquet
 
 clean:
 	$(RM) -rf bin/*
@@ -63,6 +63,9 @@ bin/tester: $(test_files) bin/libparquet.a libs/gtest/libgtest.a
 	
 bin/json2parquet: bin/libparquet.a tools/json2parquet.cpp
 	$(CXX) $(OPT) -o bin/json2parquet tools/json2parquet.cpp bin/libparquet.a $(CPPFLAGS) $(LDFLAGS)
+
+bin/xml2parquet: bin/libparquet.a tools/xml2parquet.cpp
+	$(CXX) $(OPT) -o bin/xml2parquet tools/xml2parquet.cpp bin/libparquet.a $(CPPFLAGS) $(LDFLAGS)
 
 bin/csv2parquet: bin/libparquet.a tools/csv2parquet.cpp
 	$(CXX) $(OPT) -o bin/csv2parquet tools/csv2parquet.cpp bin/libparquet.a $(CPPFLAGS) $(LDFLAGS)
