@@ -1,0 +1,3 @@
+message booltest {
+    required boolean field1;
+}

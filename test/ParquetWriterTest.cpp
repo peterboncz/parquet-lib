@@ -215,3 +215,30 @@ TEST_F(ParquetWriterTest, Xml) {
 	ASSERT_EQ(1, reader.getValue<int32_t>(1));
 }
 
+
+TEST_F(ParquetWriterTest, JsonBoolean) {
+	{
+		SchemaParser parser("testdata/schema/simpleboolean.schema");
+		GroupElement* schema = parser.parseSchema();
+		JsonParquetWriter w(schema, "testdata/out.parquet");
+		w.put("testdata/json/simpleboolean.json");
+		w.write();
+	}
+	ParquetFile file(std::string("testdata/out.parquet"));
+	Element* schema = file.getSchema();
+	ParquetTupleReader reader(&file, {string("field1")});
+	for (uint64_t i=1; i <= 4; i++) {
+		ASSERT_TRUE(reader.next());
+		ASSERT_EQ(1, reader.getValue<uint8_t>(0));
+		ASSERT_TRUE(reader.next());
+		ASSERT_EQ(0, reader.getValue<uint8_t>(0));
+	}
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(0, reader.getValue<uint8_t>(0));
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(1, reader.getValue<uint8_t>(0));
+	ASSERT_TRUE(reader.next());
+	ASSERT_EQ(1, reader.getValue<uint8_t>(0));
+	ASSERT_FALSE(reader.next());
+}
+

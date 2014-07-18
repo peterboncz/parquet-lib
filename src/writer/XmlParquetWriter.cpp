@@ -138,11 +138,17 @@ void XmlParquetWriter::putElement(schema::SimpleElement* s, std::string content,
 		*reinterpret_cast<double*>(p.second) = std::stod(content);
 		p.second += sizeof(double);
 		break;
-	case schema::ColumnType::BOOLEAN: // TODO
-		changePageIf(s, sizeof(uint8_t));
-		*reinterpret_cast<uint8_t*>(p.second) = content==BOOLEAN_YES?1:0;
-		p.second += sizeof(uint8_t);
+	case schema::ColumnType::BOOLEAN: {
+		uint32_t& offset = booleanoffsets[s];
+		*reinterpret_cast<uint8_t*>(p.second) |= ((content==BOOLEAN_YES?1:0) << offset);
+		++offset;
+		if (offset == 8) {
+			p.second += sizeof(uint8_t);
+			changePageIf(s, sizeof(uint8_t));
+			offset = 0;
+		}
 		break;
+	}
 	case schema::ColumnType::BYTE_ARRAY: {
 		const uint32_t strlength = content.size();
 		changePageIf(s, strlength+4);

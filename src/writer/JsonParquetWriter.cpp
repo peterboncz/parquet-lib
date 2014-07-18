@@ -81,13 +81,19 @@ void JsonParquetWriter::putMessage(StringVector path, const rapidjson::Value& ob
 					throw Exception("Unsupported number type");
 				break;
 			case rapidjson::Type::kFalseType:
-			case rapidjson::Type::kTrueType:
+			case rapidjson::Type::kTrueType: {
 				if (s->type != schema::ColumnType::BOOLEAN)
 					throw Exception("Unexpected type of data in json");
-				changePageIf(s, sizeof(uint8_t));
-				*reinterpret_cast<uint8_t*>(p.second) = val.GetBool()?1:0;
-				p.second += sizeof(uint8_t);
+				uint32_t& offset = booleanoffsets[s];
+				*reinterpret_cast<uint8_t*>(p.second) |= ((val.GetBool()?1:0) << offset);
+				++offset;
+				if (offset == 8) {
+					p.second += sizeof(uint8_t);
+					changePageIf(s, sizeof(uint8_t));
+					offset = 0;
+				}
 				break;
+			}
 			case rapidjson::Type::kStringType: {
 				if (s->type != schema::ColumnType::BYTE_ARRAY && s->type != schema::ColumnType::FIXED_LEN_BYTE_ARRAY)
 					throw Exception("Unexpected type of data in json");

@@ -36,6 +36,7 @@ void ParquetWriter::initColumns(schema::GroupElement* schemaelement) {
 			columns.insert({s, PtrPair(ptr, ptr)});
 			r_levels.insert({s, std::vector<uint8_t>()});
 			d_levels.insert({s, std::vector<uint8_t>()});
+			if (s->type == schema::ColumnType::BOOLEAN) booleanoffsets.insert({s, 0});
 		}
 	}
 }
@@ -163,6 +164,7 @@ void ParquetWriter::writeRowgroup(bool last) {
 			num_values += int64_t(tmp);
 			++page_it; ++rlevel_it; ++dlevel_it;
 		}
+		if (col.first->type == schema::ColumnType::BOOLEAN) col.second.second++; // Include last unfinished byte
 		pagesize += generatePage(outfile, col.second, col.first, r_levels[col.first], d_levels[col.first], tmp);
 		num_values += int64_t(tmp);
 		colmeta.__set_total_compressed_size(pagesize);
@@ -187,6 +189,7 @@ void ParquetWriter::writeRowgroup(bool last) {
 		d_levels[col.first].clear();
 	}
 	current_rowgroupsize = 0;
+	for (auto& p : booleanoffsets) p.second = 0; // Reset offsets for boolean values
 }
 
 
@@ -194,6 +197,7 @@ void ParquetWriter::changePageIf(schema::SimpleElement* column, uint64_t request
 	auto& p = columns[column];
 	// check if new value fits onto current page, if not finish page and add new one
 	if (p.second - p.first <= maximum_pagesize - requested_size) return;
+	if (column->type == schema::ColumnType::BOOLEAN) p.second++;
 	current_rowgroupsize += (p.second - p.first);
 	finished_pages[column].push_back({p.first, p.second});
 	uint8_t* ptr = new uint8_t[maximum_pagesize];
@@ -203,6 +207,8 @@ void ParquetWriter::changePageIf(schema::SimpleElement* column, uint64_t request
 	finished_r_levels[column].back().swap(r_levels[column]);
 	finished_d_levels[column].push_back({});
 	finished_d_levels[column].back().swap(d_levels[column]);
+	auto it = booleanoffsets.find(column);
+	if (it != booleanoffsets.end()) it->second = 0; // Reset offset for boolean values
 }
 
 

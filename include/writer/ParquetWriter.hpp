@@ -34,6 +34,7 @@ protected:
 	LevelVectors finished_r_levels, finished_d_levels;
 	Levels r_levels;
 	Levels d_levels;
+	std::map<schema::SimpleElement*, uint32_t> booleanoffsets;
 	uint64_t num_rows = 0, num_rows_group = 0;
 	uint64_t current_rowgroupsize = 0;
 	uint8_t* buffer;

@@ -58,11 +58,17 @@ void CSVParquetWriter::put(std::vector<std::string>& cols, const std::vector<sch
 			*reinterpret_cast<double*>(p.second) = double(std::stod(*itcol));
 			p.second += sizeof(double);
 			break;
-		case schema::ColumnType::BOOLEAN:
-			changePageIf(s, sizeof(uint8_t));
-			*reinterpret_cast<uint8_t*>(p.second) = *itcol == BOOLEAN_VALUE?1:0;
-			p.second += sizeof(uint8_t);
+		case schema::ColumnType::BOOLEAN: {
+			uint32_t& offset = booleanoffsets[s];
+			*reinterpret_cast<uint8_t*>(p.second) |= ((*itcol == BOOLEAN_VALUE?1:0) << offset);
+			++offset;
+			if (offset == 8) {
+				p.second += sizeof(uint8_t);
+				changePageIf(s, sizeof(uint8_t));
+				offset = 0;
+			}
 			break;
+		}
 		case schema::ColumnType::BYTE_ARRAY:
 		case schema::ColumnType::FIXED_LEN_BYTE_ARRAY: {
 			const uint32_t strlength = itcol->size();
