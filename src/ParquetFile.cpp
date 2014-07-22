@@ -57,6 +57,17 @@ ParquetFile::ParquetFile(const std::string& filename, bool preload) : filename(f
 }
 
 
+ParquetFile::ParquetFile(uint8_t* memory, uint64_t memsize) : file_handle(nullptr), filename(""), file_size(memsize), file_mem(memory) {
+	// check magic number
+	if (memcmp(file_mem, "PAR1", 4) != 0) throw Exception("memory region is not a parquet file");
+	if (memcmp(file_mem+file_size-4, "PAR1", 4) != 0) throw Exception("memory region is not a parquet file");
+	uint64_t footersize = *reinterpret_cast<uint32_t*>(file_mem+file_size-8);
+	uint8_t* buf = file_mem + (file_size-8-footersize);
+	filemetadata = util::thrift_deserialize<schema::thrift::FileMetaData>(buf, footersize);
+	schema = schema::generateSchema(filemetadata->schema);
+}
+
+
 ParquetFile::~ParquetFile() {
 	if (isHdfsFile) {
 #ifdef ENABLE_HDFS
@@ -64,8 +75,10 @@ ParquetFile::~ParquetFile() {
 		hdfsDisconnect(fs);
 #endif
 	} else {
-		munmap(file_mem, file_size);
-		fclose(file_handle);
+		if (filename != "") {
+			munmap(file_mem, file_size);
+			fclose(file_handle);
+		}
 	}
 	delete schema;
 	delete filemetadata;
@@ -128,5 +141,22 @@ uint8_t* ParquetFile::getMem(uint64_t pos, uint64_t size, uint8_t* current, uint
 #endif
 	}
 }
+
+
+uint8_t* ParquetFile::readFileIntoMemory(const std::string& filename, uint64_t& size) {
+	std::string fname = filename;
+	if (filename.substr(0, 7) == "file://")
+		fname = filename.substr(7); // cut off file:// at beginning
+	FILE* file_handle = fopen(fname.c_str(), "r");
+	if (file_handle == nullptr) throw Exception("invalid filename: "+fname);
+	struct stat st;
+	if (stat(fname.c_str(), &st) == -1) throw Exception("invalid filename: "+fname);
+	size = st.st_size;
+	int flags = MAP_PRIVATE;
+	flags = flags | MAP_POPULATE;
+	uint8_t* file_mem = reinterpret_cast<uint8_t*>(mmap(0, size, PROT_READ | PROT_WRITE, flags, fileno(file_handle), 0));
+	return file_mem;
+}
+
 
 }

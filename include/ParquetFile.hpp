@@ -41,6 +41,7 @@ protected:
 public:
 	uint8_t* file_mem;
 	ParquetFile(const std::string& filename, bool preload=false);
+	ParquetFile(uint8_t* memory, uint64_t memsize);
 	~ParquetFile();
 
 	schema::Element* getSchema();// { return schema; }
@@ -50,6 +51,7 @@ public:
 
 	static ParquetFile* file(const std::string& filename);
 	static std::unordered_map<std::string, ParquetFile*> files;
+	static uint8_t* readFileIntoMemory(const std::string& filename, uint64_t& size);
 
 	uint8_t* getMem(uint64_t pos, uint64_t size, uint8_t* current=nullptr, uint64_t current_size=0);
 
