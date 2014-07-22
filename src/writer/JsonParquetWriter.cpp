@@ -7,6 +7,7 @@
 #include "util/StringUtil.hpp"
 #include "util/ThriftUtil.hpp"
 #include "Exception.hpp"
+#include <bitset>
 
 namespace parquetbase {
 namespace writer {
@@ -85,6 +86,7 @@ void JsonParquetWriter::putMessage(StringVector path, const rapidjson::Value& ob
 				if (s->type != schema::ColumnType::BOOLEAN)
 					throw Exception("Unexpected type of data in json");
 				uint32_t& offset = booleanoffsets[s];
+				if (offset == 0) memset(p.second, 0, 1); // set byte to 0
 				*reinterpret_cast<uint8_t*>(p.second) |= ((val.GetBool()?1:0) << offset);
 				++offset;
 				if (offset == 8) {

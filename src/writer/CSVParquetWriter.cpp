@@ -60,6 +60,7 @@ void CSVParquetWriter::put(std::vector<std::string>& cols, const std::vector<sch
 			break;
 		case schema::ColumnType::BOOLEAN: {
 			uint32_t& offset = booleanoffsets[s];
+			if (offset == 0) memset(p.second, 0, 1); // set byte to 0
 			*reinterpret_cast<uint8_t*>(p.second) |= ((*itcol == BOOLEAN_VALUE?1:0) << offset);
 			++offset;
 			if (offset == 8) {
