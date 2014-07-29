@@ -78,11 +78,15 @@ public:
 	JsonTupleReader(const std::string& filename, schema::GroupElement* root, std::vector<schema::SimpleElement*>& schema_columns, bool virtualids=false, bool virtualfks=false);
 	void produceAll(std::function<void ()> func);
 	bool next();
+	uint64_t nextVector(uint8_t** vectors, uint64_t num_values, uint8_t** nullvectors) { return 0; }
 	uint8_t* getValuePtr(uint8_t column);
 	template <typename T>
 	T getValue(uint8_t column) { return *reinterpret_cast<T*>(getValuePtr(column)); }
 	uint32_t getValueSize(uint8_t column);
 	uint numColumns() { return values.size(); }
+	uint8_t** createEmptyVectors(uint vectorsize) { return nullptr; }
+	uint8_t** createNullVectors(uint vectorsize) { return nullptr; }
+	ReaderType getType() { return ReaderType::JSON; }
 };
 
 

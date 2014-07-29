@@ -27,7 +27,9 @@ protected:
 	uint32_t* id_ptr = nullptr;
 	uint64_t cur_id = 0;
 	uint64_t cur_fk = 0;
+	std::vector<uint64_t> cur_fks;
 	std::vector<uint32_t*> fk_ptrs;
+	uint64_t cur_r;
 	void init(std::vector<ParquetColumn> pcolumns);
 
 	uint8_t cur_r_level = 0;
@@ -48,6 +50,9 @@ public:
 	bool isFlatSchema() { return flat; }
 	uint numColumns() { return values.size(); }
 	schema::ColumnType getColumnType(uint8_t column);
+	uint8_t** createEmptyVectors(uint vectorsize);
+	uint8_t** createNullVectors(uint vectorsize);
+	ReaderType getType() { return ReaderType::PARQUET; }
 };
 
 

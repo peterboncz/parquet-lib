@@ -68,6 +68,7 @@ void ParquetTupleReader::init(std::vector<ParquetColumn> pcolumns) {
 		values.push_back(reinterpret_cast<uint8_t*>(ptr));
 		valuesizes.push_back(4);
 		*ptr = 0;
+		cur_fks.push_back(0);
 	}
 }
 
@@ -134,10 +135,12 @@ uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, 
 	assert(flat);
 	uint64_t count = 0;
 	uint64_t* fkvector = nullptr;
+	uint64_t** fkvectors = nullptr;
 	int fkindex = -1;
 	if (virtual_fks) {
-		if (virtual_ids) fkvector = reinterpret_cast<uint64_t*>(*(vectors+columns.size()+1));
-		else fkvector = reinterpret_cast<uint64_t*>(*(vectors+columns.size()));
+		fkvector = new uint64_t[num_values];
+		//if (virtual_ids) fkvector = reinterpret_cast<uint64_t*>(*(vectors+columns.size()+1));
+		//else fkvector = reinterpret_cast<uint64_t*>(*(vectors+columns.size()));
 		uint i = 0;
 		for (auto& col : columns) {
 			if (col.getSchema()->repetition == schema::RepetitionType::REQUIRED) {
@@ -147,6 +150,8 @@ uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, 
 			++i;
 		}
 		assert(fkindex >= 0);
+		if (virtual_ids) fkvectors = reinterpret_cast<uint64_t**>((vectors+columns.size()+1));
+		else fkvectors = reinterpret_cast<uint64_t**>((vectors+columns.size()));
 	}
 	uint i = 0;
 	for (auto& col : columns) {
@@ -174,6 +179,17 @@ uint64_t ParquetTupleReader::nextVector(uint8_t** vectors, uint64_t num_values, 
 			++idvec;
 		}
 		cur_id += count;
+	}
+	if (fkvector) {
+		for (uint i=0; i < count; ++i) {
+			cur_r = fkvector[i];
+			//std::cout << "max_r_level=" << uint(max_r_level) << ", cur_r=" << cur_r << std::endl;
+			for (uint8_t j=0; j < max_r_level-cur_r; j++)
+				++(cur_fks[j]);
+			for (uint l=0; l < max_r_level; ++l) {
+				fkvectors[l][i] = cur_fks[l];
+			}
+		}
 	}
 	return count;
 }
@@ -203,7 +219,9 @@ uint8_t* ParquetTupleReader::getValuePtr(uint8_t column) {
 
 
 uint32_t ParquetTupleReader::getValueSize(uint8_t column) {
-	return valuesizes[column];
+	uint32_t size = schema::size(getColumnType(column));
+	if (size == 0) return valuesizes[column];
+	else return size;
 }
 
 
@@ -212,6 +230,28 @@ schema::ColumnType ParquetTupleReader::getColumnType(uint8_t column) {
 		return schemas[column]->type;
 	else
 		return schema::ColumnType::INT64;
+}
+
+
+uint8_t** ParquetTupleReader::createEmptyVectors(uint vectorsize) {
+	uint numcols = values.size();
+	uint8_t** vectors = new uint8_t*[numcols];
+	for (uint i=0; i < numcols; ++i) {
+		uint valuesize = schema::size(getColumnType(i));
+		if (valuesize == 0) valuesize = sizeof(char*); // Byte arrays
+		vectors[i] = new uint8_t[vectorsize*valuesize];
+	}
+	return vectors;
+}
+
+
+uint8_t** ParquetTupleReader::createNullVectors(uint vectorsize) {
+	uint numcols = values.size();
+	uint8_t** vectors = new uint8_t*[numcols];
+	for (uint i=0; i < numcols; ++i) {
+		vectors[i] = new uint8_t[vectorsize];
+	}
+	return vectors;
 }
 
 

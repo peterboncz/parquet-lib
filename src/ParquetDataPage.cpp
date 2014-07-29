@@ -2,6 +2,7 @@
 #include "util/ThriftUtil.hpp"
 #include "util/BitUtil.hpp"
 #include "encoding/AllDecoders.hpp"
+#include <algorithm>
 
 namespace parquetbase {
 
@@ -90,24 +91,17 @@ uint32_t ParquetDataPage::getValueSize() {
 uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nullvector, uint64_t*& fkvector, uint64_t& fk) {
 	assert(num > 0);
 	if (num_values == 0) return 0;
-	uint8_t* d_levels = nullptr;
-	uint64_t fkcount = 0;
-	if (nullvector != nullptr && !omit_d_levels) {
-		num = d_decoder.get(d_levels, num);
-		assert(num != 0);
-	}
-	bool dofk = false;
+	num = std::min(uint64_t(num_values), num);
 	if (fkvector != nullptr) {
-		dofk = true;
 		uint64_t count = 0;
 		uint64_t rcount = 0;
+		assert(!omit_r_levels);
 		uint8_t*& rlevels = r_decoder.ptr();
 		uint8_t*& dlevels = d_decoder.ptr();
+		uint8_t* dlevelscopy = dlevels;
 		while(count < num && rcount < num_values) {
 			if (*dlevels >= schema->d_level) {
-				if (*rlevels < schema->r_level)
-					++fk;
-				*fkvector = fk;
+				*fkvector = *rlevels;
 				++fkvector;
 				++count;
 			}
@@ -117,30 +111,25 @@ uint64_t ParquetDataPage::getValues(uint8_t*& vector, uint64_t num, uint8_t*& nu
 		}
 		d_decoder.usedvalues(rcount);
 		r_decoder.usedvalues(rcount);
-		/*
-		uint8_t r, d;
-		uint64_t count = 0;
-		uint64_t rcount = 0;
-		while(count < num && d_decoder.get(d) && r_decoder.get(r)) {
-			++rcount;
-			if (d >= schema->d_level) {
-				if (r < schema->r_level)
-					++fk;
-				*fkvector = fk;
-				++fkvector;
-				++count;
-			}
-		}
-		*/
-		num = count;
 		num_values -= rcount;
+		if (nullvector != nullptr && !omit_d_levels) {
+			count = data_decoder->getValues(vector, count, dlevelscopy, schema->d_level, nullvector);
+		} else {
+			count = data_decoder->getValues(vector, count, nullptr, schema->d_level, nullvector);
+		}
+		return count;
+	} else {
+		if (nullvector != nullptr && !omit_d_levels) {
+			uint8_t* d_levels = nullptr;
+			num = d_decoder.get(d_levels, num);
+			num = data_decoder->getValues(vector, num, d_levels, schema->d_level, nullvector);
+		} else {
+			num = data_decoder->getValues(vector, num, nullptr, schema->d_level, nullvector);
+		}
+		assert(num_values >= num);
+		num_values -= num;
+		return num;
 	}
-	uint64_t count = data_decoder->getValues(vector, num, d_levels, schema->d_level, nullvector);
-	if (!dofk) {
-		assert(num_values >= count);
-		num_values -= count;
-	}
-	return count;
 }
 
 
